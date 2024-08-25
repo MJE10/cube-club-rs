@@ -50,4 +50,27 @@ impl RubikColor {
             })
             .unwrap()
     }
+
+    pub fn to_letter(&self) -> char {
+        match self {
+            White => 'w',
+            Yellow => 'y',
+            Red => 'r',
+            Orange => 'o',
+            Green => 'g',
+            Blue => 'b',
+        }
+    }
+
+    pub fn from_letter(c: char) -> Option<Self> {
+        match c {
+            'w' => Some(White),
+            'y' => Some(Yellow),
+            'r' => Some(Red),
+            'o' => Some(Orange),
+            'g' => Some(Green),
+            'b' => Some(Blue),
+            _ => None,
+        }
+    }
 }

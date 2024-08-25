@@ -1,0 +1,16 @@
+{% extends "mosaic/mosaic_base" %}
+
+{% block body %}
+    {{ super() }}
+    <div class="mosaic-grid-wrapper">
+        <div class="mosaic-grid">
+            {% for row in rows %}
+                <div class="mosaic-grid-row">
+                    {% for cell in row %}
+                        <div class="mosaic-grid-cell" style="background-color: {{ cell }}"></div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock body %}

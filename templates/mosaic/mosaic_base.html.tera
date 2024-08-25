@@ -1,0 +1,61 @@
+{% extends "base" %}
+{% block title %}{{ title }}{% endblock title %}
+{% block head %}
+    <style>
+        /* MOSAIC GRID STYLING */
+
+        .mosaic-grid-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .mosaic-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
+            border: 1px solid black;
+        }
+
+        .mosaic-grid-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .mosaic-grid-cell {
+            flex-grow: 1;
+            height: 100%;
+            border: 1px solid black;
+        }
+    </style>
+{% endblock head %}
+
+{% block body %}
+    <script>
+        function resize_mosaic_grids() {
+            for (let grid of document.getElementsByClassName("mosaic-grid")) {
+                // Get the size of the wrapper div
+                const wrapper = grid.parentElement;
+
+                let size = 0;
+                grid.style.width = "0px";
+                grid.style.height = "0px";
+
+                // Set the canvas size to match the wrapper's size
+                size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
+                grid.style.width = size + "px";
+                grid.style.height = size + "px";
+            }
+        }
+
+        window.addEventListener('resize', resize_mosaic_grids);
+        document.addEventListener('DOMContentLoaded', resize_mosaic_grids);
+    </script>
+{% endblock body %}
