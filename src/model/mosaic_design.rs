@@ -15,9 +15,12 @@ pub struct MosaicDesign {
 #[allow(dead_code)]
 impl MosaicDesign {
     pub async fn get(db: &mut SqliteConnection, id: i64) -> anyhow::Result<Self> {
-        let r = sqlx::query!("SELECT * FROM mosaic_design WHERE id = ?", id)
-            .fetch_one(db)
-            .await?;
+        let r = sqlx::query!(
+            "SELECT name, width_pixels, height_pixels, pixels FROM mosaic_design WHERE id = ?",
+            id
+        )
+        .fetch_one(db)
+        .await?;
         Ok(Self {
             id,
             name: r.name,

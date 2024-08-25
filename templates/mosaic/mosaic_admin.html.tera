@@ -21,7 +21,7 @@
             let cells = rows[row].children;
             for (let cell = 0; cell < cells.length; cell++) {
                 cells[cell].addEventListener("click", () => {
-                    fetch(`/api/mosaic/toggle/` + (row * rows[row].children.length + cell), {method: 'POST'}).then(() => location.reload());
+                    fetch(`/api/mosaic/toggle/` + row + "/" + cell, {method: 'POST'}).then(() => location.reload());
                 });
             }
         }
