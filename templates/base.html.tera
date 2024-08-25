@@ -13,7 +13,7 @@
             font-family: sans-serif;
             background-color: gray;
             align-items: center;
-            height: 95vh;
+            height: calc(100vh - 40px); /* Adjusted for padding */
         }
 
         button {

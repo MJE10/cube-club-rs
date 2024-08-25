@@ -60,3 +60,9 @@ pub async fn mosaic_reset(app: &State<App>) -> Result<(), String> {
         .await
         .map_err(|e| e.to_string())
 }
+
+#[post("/toggle/<id>")]
+pub async fn mosaic_toggle(id: i64) -> Result<(), String> {
+    println!("{id}");
+    Ok(())
+}

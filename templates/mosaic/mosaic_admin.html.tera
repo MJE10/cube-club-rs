@@ -1,0 +1,29 @@
+{% extends "mosaic/mosaic_base" %}
+{% import "macros" as macros %}
+
+{% block body %}
+    {{ super() }}
+    {{ macros::mosaic(rows=rows) }}
+    <div class="buttons">
+        <button id="set">Set All</button>
+        <button id="clear">Clear All</button>
+    </div>
+    <script>
+        document.getElementById("set").addEventListener("click", () => {
+            fetch(`/api/mosaic/reset`, {method: 'POST'}).then(() => location.reload());
+        });
+        document.getElementById("clear").addEventListener("click", () => {
+            fetch(`/api/mosaic/clear`, {method: 'POST'}).then(() => location.reload());
+        });
+
+        let rows = document.getElementsByClassName("mosaic-grid")[0].children;
+        for (let row = 0; row < rows.length; row++) {
+            let cells = rows[row].children;
+            for (let cell = 0; cell < cells.length; cell++) {
+                cells[cell].addEventListener("click", () => {
+                    fetch(`/api/mosaic/toggle/` + (row * rows[row].children.length + cell), {method: 'POST'}).then(() => location.reload());
+                });
+            }
+        }
+    </script>
+{% endblock body %}

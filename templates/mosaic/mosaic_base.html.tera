@@ -5,6 +5,7 @@
         /* MOSAIC GRID STYLING */
 
         .mosaic-grid-wrapper {
+            margin: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -40,18 +41,20 @@
 {% block body %}
     <script>
         function resize_mosaic_grids() {
-            for (let grid of document.getElementsByClassName("mosaic-grid")) {
-                // Get the size of the wrapper div
-                const wrapper = grid.parentElement;
-
-                let size = 0;
+            let grids = document.getElementsByClassName("mosaic-grid");
+            for (let grid of grids) {
                 grid.style.width = "0px";
                 grid.style.height = "0px";
+            }
 
-                // Set the canvas size to match the wrapper's size
-                size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
-                grid.style.width = size + "px";
-                grid.style.height = size + "px";
+            let sizes = [];
+            for (let grid of grids) {
+                sizes.push(Math.min(grid.parentElement.clientWidth, grid.parentElement.clientHeight));
+            }
+
+            for (let grid = 0; grid < grids.length; grid++) {
+                grids[grid].style.width = sizes[grid] + "px";
+                grids[grid].style.height = sizes[grid] + "px";
             }
         }
 

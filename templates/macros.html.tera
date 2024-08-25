@@ -1,7 +1,4 @@
-{% extends "mosaic/mosaic_base" %}
-
-{% block body %}
-    {{ super() }}
+{% macro mosaic(rows) %}
     <div class="mosaic-grid-wrapper">
         <div class="mosaic-grid">
             {% for row in rows %}
@@ -13,4 +10,4 @@
             {% endfor %}
         </div>
     </div>
-{% endblock body %}
+{% endmacro mosaic %}
