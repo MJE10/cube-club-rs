@@ -1,6 +1,10 @@
+mod model;
+
 #[macro_use]
 extern crate rocket;
 
+use crate::model::mosaic_design::MosaicDesign;
+use rocket::fs::FileServer;
 use rocket_db_pools::{Connection, Database};
 use sqlx;
 
@@ -13,18 +17,10 @@ fn index() -> &'static str {
     "Hello, world!"
 }
 
-#[get("/<id>")]
-async fn rread(mut db: Connection<CubeClub>, id: i64) -> Option<String> {
-    sqlx::query!("SELECT * FROM mosaic_design WHERE id = ?", id)
-        .fetch_one(&mut **db)
-        .await
-        .and_then(|r| Ok(r.name))
-        .ok()
-}
-
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .attach(CubeClub::init())
-        .mount("/", routes![index, rread])
+        .mount("/public", FileServer::from("www/public/"))
+        .mount("/", routes![index])
 }
