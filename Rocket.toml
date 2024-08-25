@@ -1,0 +1,2 @@
+[default.databases.cube_club]
+url = "cube_club.db"

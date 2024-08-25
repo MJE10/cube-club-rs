@@ -1,32 +1,30 @@
-use crate::models::MosaicDesign;
-use diesel::prelude::*;
-use dotenvy::dotenv;
-use std::env;
+#[macro_use]
+extern crate rocket;
 
-mod models;
-mod schema;
+use rocket_db_pools::{Connection, Database};
+use sqlx;
 
-fn main() {
-    use crate::schema::mosaic_design::dsl::*;
+#[derive(Database)]
+#[database("cube_club")]
+struct CubeClub(sqlx::SqlitePool);
 
-    println!("Hello, world!");
-
-    let conn = &mut establish_connection();
-    let results = mosaic_design
-        .filter(width_pixels.eq(30).and(height_pixels.eq(30)))
-        .select(MosaicDesign::as_select())
-        .load(conn)
-        .expect("Error loading");
-
-    for result in results {
-        println!("{}", result.name);
-    }
+#[get("/")]
+fn index() -> &'static str {
+    "Hello, world!"
 }
 
-pub fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
+#[get("/<id>")]
+async fn rread(mut db: Connection<CubeClub>, id: i64) -> Option<String> {
+    sqlx::query!("SELECT * FROM mosaic_design WHERE id = ?", id)
+        .fetch_one(&mut **db)
+        .await
+        .and_then(|r| Ok(r.name))
+        .ok()
+}
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&db_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", db_url))
+#[launch]
+fn rocket() -> _ {
+    rocket::build()
+        .attach(CubeClub::init())
+        .mount("/", routes![index, rread])
 }
