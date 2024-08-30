@@ -1,6 +1,7 @@
 use crate::model::mosaic_design::MosaicDesign;
 use crate::{App, CubeClub};
 use rocket::form::validate::Contains;
+use rocket::response::Redirect;
 use rocket::State;
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::Template;
@@ -69,7 +70,7 @@ pub async fn mosaic_reset(app: &State<App>) -> Result<(), String> {
 #[post("/toggle/<row>/<cell>")]
 pub async fn mosaic_toggle(row: i64, cell: i64, app: &State<App>) -> Result<(), String> {
     let mut mosaic = app.mosaic.write().await;
-    let id = (cell / 3, row / 3);
+    let id = (row, cell);
 
     if mosaic.available.contains(id) {
         mosaic.available.retain(|x| *x != id);
@@ -83,7 +84,17 @@ pub async fn mosaic_toggle(row: i64, cell: i64, app: &State<App>) -> Result<(), 
 #[derive(Serialize)]
 struct AdminParams {
     title: String,
-    rows: Vec<Vec<String>>,
+    rows: Vec<Vec<[[String; 3]; 3]>>,
+}
+
+#[post("/mosaic/done/<id>")]
+pub async fn mosaic_done(id: i64) {
+    Redirect::to("/thanks");
+}
+
+#[post("/mosaic/cancel/<id>")]
+pub async fn mosaic_cancel(id: i64) {
+    Redirect::to("/thanks");
 }
 
 #[get("/mosaic/admin")]
@@ -96,25 +107,35 @@ pub async fn mosaic_admin_page(
         .await
         .map_err(|e| e.to_string())?;
 
+    let mut rows = vec![];
+
+    for h in (0..design.height_pixels).step_by(3) {
+        let mut row = vec![];
+        for w in (0..design.width_pixels).step_by(3) {
+            let mut cube: [[String; 3]; 3] = [0, 1, 2].map(|h2| {
+                [0, 1, 2].map(|w2| {
+                    design
+                        .pixels
+                        .get((h + h2) as usize)
+                        .and_then(|r| r.get((w + w2) as usize))
+                        .map(|c| {
+                            if mosaic.available.contains(&(h / 3, w / 3)) {
+                                c.darkened_color().display_rgb().to_string()
+                            } else {
+                                c.solid_color().display_rgb().to_string()
+                            }
+                        })
+                        .unwrap_or_else(|| "#ffffff".to_string())
+                })
+            });
+            row.push(cube);
+        }
+        rows.push(row);
+    }
+
     let params = AdminParams {
         title: "Mosaic".to_string(),
-        rows: design
-            .pixels
-            .into_iter()
-            .enumerate()
-            .map(|(r, row)| {
-                row.into_iter()
-                    .enumerate()
-                    .map(|(c, cell)| {
-                        if mosaic.available.contains(&(c as i64 / 3, r as i64 / 3)) {
-                            cell.darkened_color().display_rgb().to_string()
-                        } else {
-                            cell.solid_color().display_rgb().to_string()
-                        }
-                    })
-                    .collect()
-            })
-            .collect(),
+        rows,
     };
 
     Ok(Template::render("mosaic/mosaic_admin", params))

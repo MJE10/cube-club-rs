@@ -1,0 +1,21 @@
+{% extends "mosaic/mosaic_base" %}
+{% import "macros" as macros %}
+
+{% block body %}
+    {{ super() }}
+    {{ macros::mosaic(rows=rows) }}
+    {{ macros::mosaic(rows=rows2) }}
+    <div class="buttons">
+        <button id="done">Done</button>
+        <button id="cancel">Cancel</button>
+    </div>
+    <script>
+        document.getElementById("done").addEventListener("click", () => {
+            fetch(`/api/mosaic/done/{{ id }}`, {method: 'POST'});
+        })
+        ;
+        document.getElementById("cancel").addEventListener("click", () => {
+            fetch(`/api/mosaic/cancel/{{ id }}`, {method: 'POST'});
+        });
+    </script>
+{% endblock body %}

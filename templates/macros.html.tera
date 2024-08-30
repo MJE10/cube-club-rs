@@ -4,7 +4,16 @@
             {% for row in rows %}
                 <div class="mosaic-grid-row">
                     {% for cell in row %}
-                        <div class="mosaic-grid-cell" style="background-color: {{ cell }}"></div>
+                        <div class="mosaic-grid-cube">
+                            {% for cubeRow in cell %}
+                                <div class="mosaic-grid-cube-row">
+                                    {% for cubeCell in cubeRow %}
+                                        <div class="mosaic-grid-cube-cell"
+                                             style="background-color: {{ cubeCell }}"></div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% endfor %}
                 </div>
             {% endfor %}

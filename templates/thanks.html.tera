@@ -1,0 +1,14 @@
+{% extends "base" %}
+{% block title %}Oops{% endblock title %}
+{% block head %}
+    <style>
+        body {
+            justify-content: center;
+            align-content: center;
+            height: 80vh;
+        }
+    </style>
+{% endblock head %}
+{% block body %}
+    <h1>Thank you!</h1>
+{% endblock body %}
