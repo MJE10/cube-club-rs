@@ -30,6 +30,15 @@ impl MosaicDesign {
         })
     }
 
+    pub async fn list(db: &mut SqliteConnection) -> anyhow::Result<Vec<i64>> {
+        Ok(sqlx::query!("SELECT id FROM mosaic_design")
+            .fetch_all(db)
+            .await?
+            .iter()
+            .map(|x| x.id)
+            .collect())
+    }
+
     pub async fn insert(&self, db: &mut SqliteConnection) -> anyhow::Result<i64> {
         let pixels = serde_json::to_string(&self.serialize_pixels())?;
         Ok(sqlx::query!(

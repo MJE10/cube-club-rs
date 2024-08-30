@@ -1,0 +1,33 @@
+{% extends "mosaic/mosaic_base" %}
+{% import "macros" as macros %}
+
+{% block body %}
+    {{ super() }}
+    {% for design in designs %}
+        {{ macros::mosaic(rows=design.rows) }}
+
+        <div class="buttons">
+            <a href="/mosaic/setDesign/{{ design.id }}">
+                <button>Select</button>
+            </a>
+        </div>
+    {% endfor %}
+    <style>
+        .mosaic-grid-wrapper {
+            min-height: 200px;
+            margin-bottom: 10px;
+        }
+
+        .mosaic-grid-row {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .mosaic-grid-cube {
+            flex-grow: 1;
+            height: 100%;
+            border: 0 solid black;
+            margin-left: 0;
+        }
+    </style>
+{% endblock body %}

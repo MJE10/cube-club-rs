@@ -2,6 +2,7 @@ use crate::model::mosaic_design::MosaicDesign;
 use crate::{App, CubeClub};
 use rand::prelude::SliceRandom;
 use rocket::form::validate::Contains;
+use rocket::response::Redirect;
 use rocket::State;
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{context, Template};
@@ -96,6 +97,18 @@ struct UserParams {
     rows2: MosaicGridArgs,
     row: i64,
     cell: i64,
+}
+
+#[derive(Serialize)]
+struct DesignParams {
+    id: i64,
+    rows: MosaicGridArgs,
+}
+
+#[derive(Serialize)]
+struct SelectParams {
+    title: String,
+    designs: Vec<DesignParams>,
 }
 
 #[post("/done/<row>/<cell>")]
@@ -200,6 +213,48 @@ pub async fn mosaic_user_page(
     };
 
     Ok(Template::render("mosaic/mosaic_user", params))
+}
+
+#[get("/setDesign/<id>")]
+pub async fn set_design(
+    id: i64,
+    app: &State<App>,
+    mut db: Connection<CubeClub>,
+) -> Result<Redirect, String> {
+    let mut mosaic = app.mosaic.write().await;
+    mosaic.design_id = id;
+    mosaic
+        .clear_all(&mut *db)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(Redirect::to("/mosaic/admin"))
+}
+
+#[get("/select")]
+pub async fn mosaic_select_page(mut db: Connection<CubeClub>) -> Result<Template, String> {
+    let db = &mut *db;
+    let ids = MosaicDesign::list(db).await.map_err(|e| e.to_string())?;
+    let mut designs = vec![];
+    for id in ids {
+        let design = MosaicDesign::get(db, id).await.map_err(|e| e.to_string())?;
+        designs.push(DesignParams {
+            id,
+            rows: make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+                design
+                    .pixels
+                    .get(h as usize)
+                    .and_then(|r| r.get(w as usize))
+                    .map(|c| c.solid_color().display_rgb().to_string())
+                    .unwrap_or_else(|| "#ffffff".to_string())
+            }),
+        })
+    }
+
+    let params = SelectParams {
+        title: "Mosaic Select".to_string(),
+        designs,
+    };
+    Ok(Template::render("mosaic/mosaic_select", params))
 }
 
 fn make_mosaic_params(

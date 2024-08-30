@@ -10,6 +10,9 @@
         <button id="set">Complete</button>
         <button id="user">User</button>
     </div>
+    <div class="buttons">
+        <button id="select">Select Mosaic</button>
+    </div>
     <script>
         document.getElementById("set").addEventListener("click", () => {
             fetch(`/api/mosaic/reset`, {method: 'POST'}).then(() => location.reload());
@@ -19,6 +22,9 @@
         });
         document.getElementById("user").addEventListener("click", () => {
             location.href = "/mosaic"
+        });
+        document.getElementById("select").addEventListener("click", () => {
+            location.href = "/mosaic/select"
         });
 
         let rows = document.getElementsByClassName("mosaic-grid")[0].children;
