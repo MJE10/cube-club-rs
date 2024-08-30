@@ -376,6 +376,7 @@ dependencies = [
  "anyhow",
  "dotenvy",
  "hex_color",
+ "rand",
  "rocket",
  "rocket_db_pools",
  "rocket_dyn_templates",

@@ -1,10 +1,10 @@
 use crate::model::mosaic_design::MosaicDesign;
 use crate::{App, CubeClub};
+use rand::prelude::SliceRandom;
 use rocket::form::validate::Contains;
-use rocket::response::Redirect;
 use rocket::State;
 use rocket_db_pools::Connection;
-use rocket_dyn_templates::Template;
+use rocket_dyn_templates::{context, Template};
 use serde::Serialize;
 use sqlx::SqliteConnection;
 
@@ -81,23 +81,39 @@ pub async fn mosaic_toggle(row: i64, cell: i64, app: &State<App>) -> Result<(), 
     Ok(())
 }
 
+type MosaicGridArgs = Vec<Vec<[[String; 3]; 3]>>;
+
 #[derive(Serialize)]
 struct AdminParams {
     title: String,
-    rows: Vec<Vec<[[String; 3]; 3]>>,
+    rows: MosaicGridArgs,
 }
 
-#[post("/mosaic/done/<id>")]
-pub async fn mosaic_done(id: i64) {
-    Redirect::to("/thanks");
+#[derive(Serialize)]
+struct UserParams {
+    title: String,
+    rows: MosaicGridArgs,
+    rows2: MosaicGridArgs,
+    row: i64,
+    cell: i64,
 }
 
-#[post("/mosaic/cancel/<id>")]
-pub async fn mosaic_cancel(id: i64) {
-    Redirect::to("/thanks");
+#[post("/done/<row>/<cell>")]
+pub async fn mosaic_done(row: i64, cell: i64, app: &State<App>) {
+    let mut mosaic = app.mosaic.write().await;
+    mosaic.in_progress.retain(|x| *x != (row, cell));
 }
 
-#[get("/mosaic/admin")]
+#[post("/cancel/<row>/<cell>")]
+pub async fn mosaic_cancel(row: i64, cell: i64, app: &State<App>) {
+    let mut mosaic = app.mosaic.write().await;
+    if mosaic.in_progress.contains(&(row, cell)) {
+        mosaic.available.push((row, cell));
+        mosaic.in_progress.retain(|x| *x != (row, cell));
+    }
+}
+
+#[get("/admin")]
 pub async fn mosaic_admin_page(
     mut db: Connection<CubeClub>,
     app: &State<App>,
@@ -107,31 +123,20 @@ pub async fn mosaic_admin_page(
         .await
         .map_err(|e| e.to_string())?;
 
-    let mut rows = vec![];
-
-    for h in (0..design.height_pixels).step_by(3) {
-        let mut row = vec![];
-        for w in (0..design.width_pixels).step_by(3) {
-            let mut cube: [[String; 3]; 3] = [0, 1, 2].map(|h2| {
-                [0, 1, 2].map(|w2| {
-                    design
-                        .pixels
-                        .get((h + h2) as usize)
-                        .and_then(|r| r.get((w + w2) as usize))
-                        .map(|c| {
-                            if mosaic.available.contains(&(h / 3, w / 3)) {
-                                c.darkened_color().display_rgb().to_string()
-                            } else {
-                                c.solid_color().display_rgb().to_string()
-                            }
-                        })
-                        .unwrap_or_else(|| "#ffffff".to_string())
-                })
-            });
-            row.push(cube);
-        }
-        rows.push(row);
-    }
+    let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+        design
+            .pixels
+            .get(h as usize)
+            .and_then(|r| r.get(w as usize))
+            .map(|c| {
+                if !mosaic.available.contains(&(h / 3, w / 3)) {
+                    c.darkened_color().display_rgb().to_string()
+                } else {
+                    c.solid_color().display_rgb().to_string()
+                }
+            })
+            .unwrap_or_else(|| "#ffffff".to_string())
+    });
 
     let params = AdminParams {
         title: "Mosaic".to_string(),
@@ -139,4 +144,80 @@ pub async fn mosaic_admin_page(
     };
 
     Ok(Template::render("mosaic/mosaic_admin", params))
+}
+
+#[get("/")]
+pub async fn mosaic_user_page(
+    mut db: Connection<CubeClub>,
+    app: &State<App>,
+) -> Result<Template, String> {
+    let mut mosaic = app.mosaic.write().await;
+
+    // choose a random available tile
+    let id = match mosaic.available.choose(&mut rand::thread_rng()) {
+        Some(id) => *id,
+        None => {
+            return Ok(Template::render("thanks", context! {}));
+        }
+    };
+    mosaic.in_progress.push(id);
+    mosaic.available.retain(|x| *x != id);
+
+    let design = MosaicDesign::get(&mut *db, mosaic.design_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+        design
+            .pixels
+            .get(h as usize)
+            .and_then(|r| r.get(w as usize))
+            .map(|c| {
+                if (h / 3, w / 3) != id {
+                    c.darkened_color().display_rgb().to_string()
+                } else {
+                    c.solid_color().display_rgb().to_string()
+                }
+            })
+            .unwrap_or_else(|| "#ffffff".to_string())
+    });
+
+    let params = UserParams {
+        title: "Mosaic".to_string(),
+        rows,
+        rows2: vec![vec![[0, 1, 2].map(|h| {
+            [0, 1, 2].map(|w| {
+                design
+                    .pixels
+                    .get((id.0 * 3 + h) as usize)
+                    .and_then(|r| r.get((id.1 * 3 + w) as usize))
+                    .map(|c| c.solid_color().display_rgb().to_string())
+                    .unwrap_or_else(|| "#ffffff".to_string())
+            })
+        })]],
+        row: id.0,
+        cell: id.1,
+    };
+
+    Ok(Template::render("mosaic/mosaic_user", params))
+}
+
+fn make_mosaic_params(
+    height: i64,
+    width: i64,
+    colors: impl Fn(i64, i64) -> String,
+) -> MosaicGridArgs {
+    let mut rows = vec![];
+
+    for h in (0..height).step_by(3) {
+        let mut row = vec![];
+        for w in (0..width).step_by(3) {
+            let cube: [[String; 3]; 3] =
+                [0, 1, 2].map(|h2| [0, 1, 2].map(|w2| colors(h + h2, w + w2)));
+            row.push(cube);
+        }
+        rows.push(row);
+    }
+
+    rows
 }

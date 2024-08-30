@@ -7,15 +7,21 @@
     {{ macros::mosaic(rows=rows2) }}
     <div class="buttons">
         <button id="done">Done</button>
-        <button id="cancel">Cancel</button>
+        <button id="cancel">Re-roll</button>
+        <button id="admin">Admin</button>
     </div>
     <script>
         document.getElementById("done").addEventListener("click", () => {
-            fetch(`/api/mosaic/done/{{ id }}`, {method: 'POST'});
-        })
-        ;
+            fetch(`/api/mosaic/done/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => window.location.reload.bind(window.location)());
+        });
         document.getElementById("cancel").addEventListener("click", () => {
-            fetch(`/api/mosaic/cancel/{{ id }}`, {method: 'POST'});
+            fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => window.location.reload.bind(window.location)());
+        });
+        document.getElementById("admin").addEventListener("click", () => {
+            location.href = "/mosaic/admin"
+        });
+        window.addEventListener('beforeunload', function (event) {
+            navigator.sendBeacon(`/api/mosaic/cancel/{{ row }}/{{ cell }}`);
         });
     </script>
 {% endblock body %}

@@ -4,7 +4,10 @@ mod mosaic;
 #[macro_use]
 extern crate rocket;
 
-use crate::mosaic::{mosaic_admin_page, mosaic_clear, mosaic_reset, mosaic_toggle, Mosaic};
+use crate::mosaic::{
+    mosaic_admin_page, mosaic_cancel, mosaic_clear, mosaic_done, mosaic_reset, mosaic_toggle,
+    mosaic_user_page, Mosaic,
+};
 use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use sqlx;
@@ -32,9 +35,16 @@ fn rocket() -> _ {
         .manage(App {
             mosaic: Default::default(),
         })
-        .mount("/", routes![index, mosaic_admin_page])
+        .mount("/", routes![index])
+        .mount("/mosaic", routes![mosaic_admin_page, mosaic_user_page])
         .mount(
             "/api/mosaic",
-            routes![mosaic_clear, mosaic_reset, mosaic_toggle],
+            routes![
+                mosaic_clear,
+                mosaic_reset,
+                mosaic_toggle,
+                mosaic_cancel,
+                mosaic_done
+            ],
         )
 }

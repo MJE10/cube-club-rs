@@ -1,14 +1,18 @@
 {% extends "base" %}
-{% block title %}Oops{% endblock title %}
+{% block title %}Cube Club{% endblock title %}
 {% block head %}
     <style>
         body {
-            justify-content: center;
+            justify-content: space-around;
             align-content: center;
             height: 80vh;
         }
     </style>
 {% endblock head %}
 {% block body %}
+    <p></p>
     <h1>Thank you!</h1>
+    <a href="/mosaic/admin">
+        <button>Mosaic Admin</button>
+    </a>
 {% endblock body %}
