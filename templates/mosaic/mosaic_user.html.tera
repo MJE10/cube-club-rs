@@ -18,9 +18,9 @@
             fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => window.location.reload.bind(window.location)());
         });
         document.getElementById("admin").addEventListener("click", () => {
-            location.href = "/mosaic/admin"
+            fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => {location.href = "/mosaic/admin"});
         });
-        window.addEventListener('beforeunload', function (event) {
+        window.addEventListener('beforeunload', (event) => {
             navigator.sendBeacon(`/api/mosaic/cancel/{{ row }}/{{ cell }}`);
         });
     </script>
