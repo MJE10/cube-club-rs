@@ -3,6 +3,11 @@
 
 {% block body %}
     {{ super() }}
+    <div class="buttons">
+        <a href="/mosaic/admin">
+            <button>Cancel</button>
+        </a>
+    </div>
     {% for design in designs %}
         {{ macros::mosaic(rows=design.rows) }}
 

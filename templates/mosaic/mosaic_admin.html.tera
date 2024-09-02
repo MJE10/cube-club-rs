@@ -10,7 +10,8 @@
         <button id="set">Complete</button>
         <button id="user">User</button>
     </div>
-    <div class="buttons">
+    <div class="buttons" style="margin-top: 5px">
+        <button id="home">Home</button>
         <button id="select">Select Mosaic</button>
     </div>
     <script>
@@ -25,6 +26,9 @@
         });
         document.getElementById("select").addEventListener("click", () => {
             location.href = "/mosaic/select"
+        });
+        document.getElementById("home").addEventListener("click", () => {
+            location.href = "/"
         });
 
         let rows = document.getElementsByClassName("mosaic-grid")[0].children;

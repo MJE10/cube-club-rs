@@ -32,12 +32,12 @@ impl RubikColor {
 
     pub fn darkened_color(&self) -> HexColor {
         match self {
-            Red => HexColor::parse("#350201").unwrap(),
-            Green => HexColor::parse("#001907").unwrap(),
-            Blue => HexColor::parse("#000027").unwrap(),
-            Yellow => HexColor::parse("#302500").unwrap(),
-            White => HexColor::parse("#1c1c1c").unwrap(),
-            Orange => HexColor::parse("#291901").unwrap(),
+            Red => HexColor::parse("#570100").unwrap(),
+            Green => HexColor::parse("#003810").unwrap(),
+            Blue => HexColor::parse("#000053").unwrap(),
+            Yellow => HexColor::parse("#4e3c00").unwrap(),
+            White => HexColor::parse("#3b3b3b").unwrap(),
+            Orange => HexColor::parse("#583602").unwrap(),
         }
     }
 

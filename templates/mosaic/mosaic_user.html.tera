@@ -8,6 +8,9 @@
     <div class="buttons">
         <button id="done">Done</button>
         <button id="cancel">Re-roll</button>
+    </div>
+    <div class="buttons" style="margin-top: 5px">
+        <button id="home">Home</button>
         <button id="admin">Admin</button>
     </div>
     <script>
@@ -18,7 +21,14 @@
             fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => window.location.reload.bind(window.location)());
         });
         document.getElementById("admin").addEventListener("click", () => {
-            fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => {location.href = "/mosaic/admin"});
+            fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => {
+                location.href = "/mosaic/admin"
+            });
+        });
+        document.getElementById("home").addEventListener("click", () => {
+            fetch(`/api/mosaic/cancel/{{ row }}/{{ cell }}`, {method: 'POST'}).then(() => {
+                location.href = "/"
+            });
         });
         window.addEventListener('beforeunload', (event) => {
             navigator.sendBeacon(`/api/mosaic/cancel/{{ row }}/{{ cell }}`);

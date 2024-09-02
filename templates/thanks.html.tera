@@ -11,7 +11,7 @@
 {% endblock head %}
 {% block body %}
     <p></p>
-    <h1>Thank you!</h1>
+    <h1>Mosaic is finished!</h1>
     <a href="/mosaic/admin">
         <button>Mosaic Admin</button>
     </a>
