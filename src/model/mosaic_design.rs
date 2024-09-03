@@ -39,15 +39,17 @@ impl MosaicDesign {
             .collect())
     }
 
-    pub async fn insert(&self, db: &mut SqliteConnection) -> anyhow::Result<i64> {
+    pub async fn insert(&mut self, db: &mut SqliteConnection) -> anyhow::Result<i64> {
         let pixels = serde_json::to_string(&self.serialize_pixels())?;
-        Ok(sqlx::query!(
+        let id = sqlx::query!(
             "INSERT INTO mosaic_design (name, width_pixels, height_pixels, pixels) VALUES (?, ?, ?, ?) RETURNING id",
             self.name,
             self.width_pixels,
             self.height_pixels,
             pixels
-        ).fetch(db).try_collect::<Vec<_>>().await?.first().ok_or(anyhow!("insert failed"))?.id)
+        ).fetch(db).try_collect::<Vec<_>>().await?.first().ok_or(anyhow!("insert failed"))?.id;
+        self.id = id;
+        Ok(id)
     }
 
     pub async fn update(&self, db: &mut SqliteConnection) -> anyhow::Result<u64> {
