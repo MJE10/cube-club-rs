@@ -3,32 +3,33 @@
 
 {% block body %}
     {{ super() }}
-    <p style="text-align: center">Showing available cubes<br>(dark cubes are completed)</p>
     {{ macros::mosaic(rows=rows) }}
-    <div class="buttons">
-        <button id="clear">Wipe</button>
-        <button id="set">Complete</button>
-        <button id="user">User</button>
-    </div>
-    <div class="buttons" style="margin-top: 5px">
-        <button id="home">Home</button>
-        <button id="select">Select Mosaic</button>
-    </div>
+    <div class="block"></div>
+    <p style="text-align: center">Showing available cubes<br>(dark cubes are completed)</p>
+    <div class="block"></div>
+    <section class="section paddingless">
+        <div class="buttons is-flex is-justify-content-center" style="padding: 10px">
+            <a id="clear" class="button is-danger">
+                Wipe
+            </a>
+            <a id="set" class="button is-success">
+                Complete
+            </a>
+            <a class="button is-light" href="/mosaic">
+                User
+            </a>
+            <a class="button is-light" href="/mosaic/select">
+                Select Mosaic
+            </a>
+        </div>
+    </section>
+    <div class="block"></div>
     <script>
-        document.getElementById("set").addEventListener("click", () => {
-            fetch(`/api/mosaic/reset`, {method: 'POST'}).then(() => location.reload());
-        });
         document.getElementById("clear").addEventListener("click", () => {
             fetch(`/api/mosaic/clear`, {method: 'POST'}).then(() => location.reload());
         });
-        document.getElementById("user").addEventListener("click", () => {
-            location.href = "/mosaic"
-        });
-        document.getElementById("select").addEventListener("click", () => {
-            location.href = "/mosaic/select"
-        });
-        document.getElementById("home").addEventListener("click", () => {
-            location.href = "/"
+        document.getElementById("set").addEventListener("click", () => {
+            fetch(`/api/mosaic/reset`, {method: 'POST'}).then(() => location.reload());
         });
 
         let rows = document.getElementsByClassName("mosaic-grid")[0].children;

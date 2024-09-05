@@ -11,9 +11,11 @@ use crate::mosaic::{
     mosaic_toggle, mosaic_user_page, set_design, Mosaic,
 };
 use dotenvy::dotenv;
+use rocket::fs::FileServer;
 use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::OAuth2;
+use serde::Serialize;
 use sqlx;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -26,9 +28,14 @@ pub struct App {
     mosaic: Arc<RwLock<Mosaic>>,
 }
 
+#[derive(Serialize)]
+pub struct Base {
+    pub user: Option<i64>,
+}
+
 #[get("/")]
 fn index() -> Template {
-    Template::render("index", context! {})
+    Template::render("index", context! {base: Base { user: Some(2) }})
 }
 
 #[launch]
@@ -42,6 +49,7 @@ fn rocket() -> _ {
         .manage(App {
             mosaic: Default::default(),
         })
+        .mount("/", FileServer::from("static"))
         .mount("/", routes![index, google_login, google_callback, logout])
         .mount(
             "/mosaic",

@@ -1,26 +1,9 @@
 {% extends "base" %}
 {% block title %}Cube Club{% endblock title %}
-{% block head %}
-    <style>
-        body {
-            justify-content: center;
-            align-content: center;
-            height: 80vh;
-        }
-
-        * {
-            text-align: center;
-        }
-    </style>
-{% endblock head %}
 {% block body %}
-    <h1>Welcome to Cube Club!</h1>
-    <p></p>
-    <a href="/login/google">Log in</a>
-    <p></p>
-    <a href="/logout">Log out</a>
-    <p></p>
-    <a href="https://cglink.me/2d1/c22739019216512" target="_blank">CampusGroups Check-in</a>
-    <p></p>
-    <a href="/mosaic">Mosaics</a>
+    <section class="section">
+        <h1 class="title">Cube Club</h1>
+        <a href="https://cglink.me/2d1/c22739019216512" target="_blank">CampusGroups Check-in</a><br>
+        <a href="/mosaic">Mosaics</a>
+    </section>
 {% endblock body %}
