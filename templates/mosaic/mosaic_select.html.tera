@@ -3,16 +3,16 @@
 
 {% block body %}
     {{ super() }}
-    <div class="buttons">
-        <a href="/mosaic/admin">
+    <div class="buttons is-flex is-justify-content-center">
+        <a class="button is-warning" href="/mosaic/admin">
             <button>Cancel</button>
         </a>
     </div>
     {% for design in designs %}
         {{ macros::mosaic(rows=design.rows) }}
 
-        <div class="buttons">
-            <a href="/mosaic/setDesign/{{ design.id }}">
+        <div class="buttons is-flex is-justify-content-center">
+            <a class="button is-light" href="/mosaic/setDesign/{{ design.id }}">
                 <button>Select</button>
             </a>
         </div>
