@@ -26,7 +26,7 @@ impl MosaicDesign {
             name: r.name,
             width_pixels: r.width_pixels,
             height_pixels: r.height_pixels,
-            pixels: Self::deserialize_pixels(&serde_json::from_str(&r.pixels)?)?,
+            pixels: Self::deserialize_pixels(&serde_json::from_str::<Vec<_>>(&r.pixels)?)?,
         })
     }
 
@@ -82,7 +82,7 @@ impl MosaicDesign {
             .collect()
     }
 
-    fn deserialize_pixels(pixels: &Vec<String>) -> anyhow::Result<Vec<Vec<RubikColor>>> {
+    fn deserialize_pixels(pixels: &[String]) -> anyhow::Result<Vec<Vec<RubikColor>>> {
         pixels
             .iter()
             .map(|row| {

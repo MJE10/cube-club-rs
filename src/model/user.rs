@@ -28,7 +28,7 @@ impl<'r> request::FromRequest<'r> for User {
         let mut db = request.guard::<Connection<CubeClub>>().await.expect("db");
         if let Some(cookie) = cookies.get_private("user") {
             if let Ok(id) = cookie.value().parse() {
-                return match User::get(&mut *db, id).await {
+                return match User::get(&mut db, id).await {
                     Ok(user) => request::Outcome::Success(user),
                     _ => request::Outcome::Forward(Status::Unauthorized),
                 };

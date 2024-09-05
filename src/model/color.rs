@@ -51,7 +51,7 @@ impl RubikColor {
             .unwrap()
     }
 
-    pub fn to_letter(&self) -> char {
+    pub fn to_letter(self) -> char {
         match self {
             White => 'w',
             Yellow => 'y',

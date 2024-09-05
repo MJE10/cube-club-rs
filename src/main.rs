@@ -16,7 +16,6 @@ use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::OAuth2;
 use serde::Serialize;
-use sqlx;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

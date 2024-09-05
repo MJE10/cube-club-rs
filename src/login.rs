@@ -58,7 +58,7 @@ pub async fn google_callback(
         given_name: user_info.given_name,
         family_name: user_info.family_name,
     }
-    .insert(&mut *db)
+    .insert(&mut db)
     .await?;
 
     // Set a private cookie with the user's name, and redirect to the home page.

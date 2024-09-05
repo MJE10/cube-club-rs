@@ -36,13 +36,12 @@ impl Mosaic {
         let design = MosaicDesign::get(db, self.design_id).await?;
         self.available = (0..design.height_pixels)
             .step_by(3)
-            .map(|h| {
+            .flat_map(|h| {
                 (0..design.width_pixels)
                     .step_by(3)
                     .map(|w| (w / 3, h / 3))
                     .collect::<Vec<_>>()
             })
-            .flatten()
             .collect::<Vec<_>>();
         Ok(())
     }
@@ -53,7 +52,7 @@ pub async fn mosaic_clear(mut db: Connection<CubeClub>, app: &State<App>) -> Res
     app.mosaic
         .write()
         .await
-        .clear_all(&mut *db)
+        .clear_all(&mut db)
         .await
         .map_err(|e| e.to_string())
 }
@@ -132,7 +131,7 @@ pub async fn mosaic_admin_page(
     app: &State<App>,
 ) -> Result<Template, String> {
     let mosaic = app.mosaic.read().await;
-    let design = MosaicDesign::get(&mut *db, mosaic.design_id)
+    let design = MosaicDesign::get(&mut db, mosaic.design_id)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -176,7 +175,7 @@ pub async fn mosaic_user_page(
     mosaic.in_progress.push(id);
     mosaic.available.retain(|x| *x != id);
 
-    let design = MosaicDesign::get(&mut *db, mosaic.design_id)
+    let design = MosaicDesign::get(&mut db, mosaic.design_id)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -223,10 +222,7 @@ pub async fn set_design(
 ) -> Result<Redirect, String> {
     let mut mosaic = app.mosaic.write().await;
     mosaic.design_id = id;
-    mosaic
-        .clear_all(&mut *db)
-        .await
-        .map_err(|e| e.to_string())?;
+    mosaic.clear_all(&mut db).await.map_err(|e| e.to_string())?;
     Ok(Redirect::to("/mosaic/admin"))
 }
 
