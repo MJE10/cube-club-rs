@@ -5,5 +5,6 @@
         <h1 class="title">Cube Club</h1>
         <a href="https://cglink.me/2d1/c22739019216512" target="_blank">CampusGroups Check-in</a><br>
         <a href="/mosaic">Mosaics</a>
+        <a href="/timer">Timer</a>
     </section>
 {% endblock body %}

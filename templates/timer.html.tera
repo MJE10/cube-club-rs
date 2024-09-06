@@ -1,0 +1,106 @@
+{% extends "base" %}
+{% block title %}Cube Club{% endblock title %}
+{% block body %}
+    <style>
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+    <section class="section has-text-centered paddingless">
+        <p>3x3 Single</p>
+    </section>
+    <section class="section has-text-centered">
+        <p><strong>F' R' D2 F L2 F2 L2 U2 B R2 D2 B2 R2 L F U2 R' D' U R2</strong></p>
+    </section>
+    <section class="section is-flex is-flex-direction-column is-justify-content-center has-text-centered"
+             style="flex-grow: 1">
+        <p id="time" class="title">0.00</p>
+        <div class="block"></div>
+        <p id="tap-to-start" class="subtitle">Tap to start</p>
+    </section>
+    <section class="section">
+        <div class="buttons is-flex is-justify-content-center">
+            <a id="reset" class="button is-warning">
+                Reset
+            </a>
+            <a id="keyboard" class="button is-light">
+                <i class="ph ph-keyboard"></i>
+            </a>
+            <a id="submit" class="button is-success">
+                Submit
+            </a>
+        </div>
+    </section>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let timerElement = document.getElementById('time');
+            let resetButton = document.getElementById('reset');
+            let keyboardButton = document.getElementById('keyboard');
+            let submitButton = document.getElementById('submit');
+            let tapToStartElement = document.getElementById('tap-to-start');
+
+            let isRunning = false;
+            let startTime, timerInterval;
+
+            // Reset button functionality
+            resetButton.addEventListener('click', function () {
+                timerElement.innerText = "0.00";
+                clearInterval(timerInterval);
+                isRunning = false;
+                tapToStartElement.style.visibility = 'visible'; // Show the directions again when reset
+            });
+
+            // Submit button functionality (POST request)
+            submitButton.addEventListener('click', function () {
+                let timeValue = timerElement.innerText;
+                fetch('/api/time', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({time: timeValue})
+                })
+                    .then(() => {
+                        location.reload()
+                    });
+            });
+
+            // Keyboard button functionality
+            keyboardButton.addEventListener('click', function () {
+                let userInput = prompt('Enter time (in seconds):');
+                if (userInput && !isNaN(userInput)) {
+                    timerElement.innerText = parseFloat(userInput).toFixed(2);
+                }
+            });
+
+            // Timer functionality for click interaction
+            let timerSection = document.querySelector('.section.is-flex');
+
+            // Function to start the timer
+            function startTimer() {
+                startTime = new Date().getTime();
+                timerInterval = setInterval(function () {
+                    timerElement.innerText = ((new Date().getTime() - startTime) / 1000).toFixed(2);
+                }, 10);
+            }
+
+            // Tap/click to start or stop logic
+            timerSection.addEventListener('click', function () {
+                let currentTime = parseFloat(timerElement.innerText);
+
+                // Only start if timer is at 0.00 and not currently running
+                if (!isRunning && currentTime === 0.00) {
+                    startTimer();
+                    isRunning = true;
+                    tapToStartElement.style.visibility = 'hidden'; // Hide the directions when the timer starts
+                } else if (isRunning) {
+                    // Stop the timer if it's currently running
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                }
+            });
+        });
+    </script>
+{% endblock body %}

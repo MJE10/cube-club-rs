@@ -37,6 +37,11 @@ fn index() -> Template {
     Template::render("index", context! {base: Base { user: Some(2) }})
 }
 
+#[get("/timer")]
+fn timer() -> Template {
+    Template::render("timer", context! {base: Base { user: Some(2) }})
+}
+
 #[launch]
 fn rocket() -> _ {
     dotenv().unwrap();
@@ -49,7 +54,10 @@ fn rocket() -> _ {
             mosaic: Default::default(),
         })
         .mount("/", FileServer::from("static"))
-        .mount("/", routes![index, google_login, google_callback, logout])
+        .mount(
+            "/",
+            routes![index, timer, google_login, google_callback, logout],
+        )
         .mount(
             "/mosaic",
             routes![
