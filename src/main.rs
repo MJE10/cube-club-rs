@@ -42,6 +42,11 @@ fn timer() -> Template {
     Template::render("timer", context! {base: Base { user: Some(2) }})
 }
 
+#[get("/leaderboard")]
+fn leaderboard() -> Template {
+    Template::render("leaderboard", context! {base: Base { user: Some(2) }})
+}
+
 #[launch]
 fn rocket() -> _ {
     dotenv().unwrap();
@@ -56,7 +61,14 @@ fn rocket() -> _ {
         .mount("/", FileServer::from("static"))
         .mount(
             "/",
-            routes![index, timer, google_login, google_callback, logout],
+            routes![
+                index,
+                timer,
+                leaderboard,
+                google_login,
+                google_callback,
+                logout
+            ],
         )
         .mount(
             "/mosaic",

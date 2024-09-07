@@ -1,0 +1,198 @@
+{% extends "base" %}
+{% block title %}Cube Club{% endblock title %}
+{% block body %}
+    <style>
+        nav {
+            display: none !important;
+        }
+
+        .tile {
+            border: 1px solid white;
+            border-radius: 10px;
+            padding: 5px 10px 5px 10px;
+            width: 100%;
+
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+
+            margin-bottom: 5px;
+
+            position: relative; /* Necessary for position animation */
+            transition: transform 1.25s ease; /* Smooth transition for movement */
+            z-index: 1; /* Prevent overlapping text */
+        }
+
+        .tile-position {
+            min-width: 2em;
+        }
+
+        .tile-name {
+            flex-grow: 1;
+            flex-shrink: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tile-extra {
+            margin-left: 10px;
+        }
+
+        .ph-align-bottom {
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+        }
+    </style>
+
+    <section class="section">
+        <h1 class="title">Leaderboard</h1>
+        <h1 class="subtitle">3x3 Single</h1>
+        <div id="leaderboard-tiles"></div>
+    </section>
+
+    {#    <button id="shuffle-btn">Shuffle Positions</button> #}
+
+    <script>
+        // Define the list of leaderboard data
+        let leaderboardData = [
+            {user_id: 1, position: 1, name: 'Michael', extra: 3.54},
+            {user_id: 2, position: 2, name: 'Sarah', extra: 4.12},
+            {user_id: 3, position: 3, name: 'John', extra: 4.30}
+        ];
+
+        // Easing function for smooth transitions (ease-in-out cubic)
+        function easeInOut(t) {
+            return 1.0 / (1 + Math.pow(Math.E, -10 * (t - 0.5)))
+        }
+
+        // Function to smoothly animate the transition of "extra" data values with easing
+        function animateExtraValue(element, startValue, endValue, duration = 1250) {
+            const startTime = performance.now();
+
+            function updateValue(timestamp) {
+                const elapsed = timestamp - startTime;
+                let progress = Math.min(elapsed / duration, 1); // Ensure progress is between 0 and 1
+                progress = easeInOut(progress); // Apply easing to the progress
+
+                const currentValue = startValue + (endValue - startValue) * progress;
+
+                element.innerHTML = `<strong>${currentValue.toFixed(2)}</strong>`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateValue); // Continue the animation
+                }
+            }
+
+            requestAnimationFrame(updateValue); // Start the animation
+        }
+
+        // Function to create and append tiles to the leaderboard
+        function createLeaderboardTiles() {
+            const section = document.querySelector('.section');
+
+            // Find and remove any existing tiles, but leave the title and subtitle intact
+            const existingTiles = section.querySelectorAll('.tile');
+            existingTiles.forEach(tile => tile.remove());
+
+            leaderboardData.forEach((user) => {
+                // Create a div for the tile
+                const tileDiv = document.createElement('div');
+                tileDiv.classList.add('tile');
+                tileDiv.dataset.userId = user.user_id;
+
+                // Create and append the position element
+                const positionIcon = document.createElement('i');
+                positionIcon.classList.add('ph-bold', 'ph-caret-up');
+                positionIcon.style.color = 'green'; // Customize this based on conditions
+                tileDiv.appendChild(positionIcon);
+
+                const positionElement = document.createElement('p');
+                positionElement.classList.add('tile-position');
+                positionElement.innerHTML = `<strong>${user.position}</strong>`;
+                tileDiv.appendChild(positionElement);
+
+                // Create and append the name element
+                const nameElement = document.createElement('p');
+                nameElement.classList.add('tile-name');
+                nameElement.textContent = user.name;
+                tileDiv.appendChild(nameElement);
+
+                // Create and append the extra element
+                const extraElement = document.createElement('p');
+                extraElement.classList.add('tile-extra');
+                extraElement.innerHTML = `<strong>${user.extra.toFixed(2)}</strong>`;
+                tileDiv.appendChild(extraElement);
+
+                // Append the tile to the section
+                section.appendChild(tileDiv);
+            });
+        }
+
+        // Function to update leaderboard tiles and animate position and "extra" changes
+        function updateLeaderboardTiles(newData) {
+            // Create a map for fast lookup by user_id
+            const tileMap = {};
+            const tiles = document.querySelectorAll('.tile');
+            tiles.forEach(tile => {
+                const userId = tile.dataset.userId;
+                tileMap[userId] = tile;
+            });
+
+            // Re-sort tiles based on the new positions
+            newData.forEach((user, index) => {
+                const tile = tileMap[user.user_id];
+                const newPosition = index * (tile.offsetHeight + 5); // Calculate the new position
+
+                tile.style.transform = `translateY(${newPosition}px)`; // Animate tile position
+
+                const positionElement = tile.querySelector('.tile-position');
+
+                // Update caret
+                const currentPosition = parseFloat(positionElement.textContent); // Get current displayed value
+                const caretElement = tile.querySelector('.ph-bold');
+                if (currentPosition < user.position) {
+                    caretElement.className = "ph-bold ph-caret-down ph-align-bottom";
+                    caretElement.style.color = "red";
+                } else if (currentPosition > user.position) {
+                    caretElement.className = "ph-bold ph-caret-up";
+                    caretElement.style.color = "green";
+                }
+
+                // Update position text
+                positionElement.innerHTML = `<strong>${user.position}</strong>`;
+
+                // Animate the transition of the "extra" value with easing
+                const extraElement = tile.querySelector('.tile-extra');
+                const currentValue = parseFloat(extraElement.textContent); // Get current displayed value
+                animateExtraValue(extraElement, currentValue, user.extra); // Animate to the new value
+            });
+
+            setTimeout(() => {
+                leaderboardData.sort(() => Math.random() - 0.5); // Shuffle leaderboard data
+                leaderboardData.forEach((user, index) => {
+                    user.position = index + 1; // Reassign positions
+                    user.extra = (Math.random() * 5).toFixed(2); // Randomize "extra" values between 0 and 5
+                });
+                updateLeaderboardTiles(leaderboardData); // Animate position and extra updates
+            }, 2000);
+        }
+
+        // Randomize positions and "extra" data on button click
+        // document.getElementById('shuffle-btn').addEventListener('click', () => {
+        //     leaderboardData.sort(() => Math.random() - 0.5); // Shuffle leaderboard data
+        //     leaderboardData.forEach((user, index) => {
+        //         user.position = index + 1; // Reassign positions
+        //         user.extra = (Math.random() * 5).toFixed(2); // Randomize "extra" values between 0 and 5
+        //     });
+        //     updateLeaderboardTiles(leaderboardData); // Animate position and extra updates
+        // });
+
+        // Call the function when the window loads
+        window.onload = () => {
+            createLeaderboardTiles(); // Initial creation of tiles
+            setTimeout(() => updateLeaderboardTiles(leaderboardData), 0); // Apply initial positions
+        };
+    </script>
+{% endblock body %}
