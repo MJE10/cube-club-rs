@@ -9,10 +9,10 @@
         }
     </style>
     <section class="section has-text-centered paddingless">
-        <p>3x3 Single</p>
+        <p>{{ event }}</p>
     </section>
     <section class="section has-text-centered">
-        <p><strong>F' R' D2 F L2 F2 L2 U2 B R2 D2 B2 R2 L F U2 R' D' U R2</strong></p>
+        <p><strong>{{ scramble }}</strong></p>
     </section>
     <section class="section is-flex is-flex-direction-column is-justify-content-center has-text-centered"
              style="flex-grow: 1">
