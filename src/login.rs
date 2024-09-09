@@ -21,7 +21,7 @@ pub struct GoogleUserInfo {
 
 #[get("/logout")]
 pub fn logout(cookies: &CookieJar<'_>) -> Redirect {
-    cookies.remove(Cookie::from("username"));
+    cookies.remove(Cookie::from("user"));
     Redirect::to("/")
 }
 

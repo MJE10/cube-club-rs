@@ -1,5 +1,5 @@
 use crate::model::mosaic_design::MosaicDesign;
-use crate::{App, CubeClub};
+use crate::{App, Base, CubeClub};
 use rand::prelude::SliceRandom;
 use rocket::form::validate::Contains;
 use rocket::response::Redirect;
@@ -85,12 +85,14 @@ type MosaicGridArgs = Vec<Vec<[[String; 3]; 3]>>;
 
 #[derive(Serialize)]
 struct AdminParams {
+    base: Base,
     title: String,
     rows: MosaicGridArgs,
 }
 
 #[derive(Serialize)]
 struct UserParams {
+    base: Base,
     title: String,
     rows: MosaicGridArgs,
     rows2: MosaicGridArgs,
@@ -100,12 +102,14 @@ struct UserParams {
 
 #[derive(Serialize)]
 struct DesignParams {
+    base: Base,
     id: i64,
     rows: MosaicGridArgs,
 }
 
 #[derive(Serialize)]
 struct SelectParams {
+    base: Base,
     title: String,
     designs: Vec<DesignParams>,
 }
@@ -129,6 +133,7 @@ pub async fn mosaic_cancel(row: i64, cell: i64, app: &State<App>) {
 pub async fn mosaic_admin_page(
     mut db: Connection<CubeClub>,
     app: &State<App>,
+    base: Base,
 ) -> Result<Template, String> {
     let mosaic = app.mosaic.read().await;
     let design = MosaicDesign::get(&mut db, mosaic.design_id)
@@ -151,6 +156,7 @@ pub async fn mosaic_admin_page(
     });
 
     let params = AdminParams {
+        base,
         title: "Mosaic".to_string(),
         rows,
     };
@@ -162,6 +168,7 @@ pub async fn mosaic_admin_page(
 pub async fn mosaic_user_page(
     mut db: Connection<CubeClub>,
     app: &State<App>,
+    base: Base,
 ) -> Result<Template, String> {
     let mut mosaic = app.mosaic.write().await;
 
@@ -169,7 +176,7 @@ pub async fn mosaic_user_page(
     let id = match mosaic.available.choose(&mut rand::thread_rng()) {
         Some(id) => *id,
         None => {
-            return Ok(Template::render("thanks", context! {}));
+            return Ok(Template::render("thanks", context! {base}));
         }
     };
     mosaic.in_progress.push(id);
@@ -195,6 +202,7 @@ pub async fn mosaic_user_page(
     });
 
     let params = UserParams {
+        base,
         title: "Mosaic".to_string(),
         rows,
         rows2: vec![vec![[0, 1, 2].map(|h| {
@@ -227,13 +235,17 @@ pub async fn set_design(
 }
 
 #[get("/select")]
-pub async fn mosaic_select_page(mut db: Connection<CubeClub>) -> Result<Template, String> {
+pub async fn mosaic_select_page(
+    mut db: Connection<CubeClub>,
+    base: Base,
+) -> Result<Template, String> {
     let db = &mut *db;
     let ids = MosaicDesign::list(db).await.map_err(|e| e.to_string())?;
     let mut designs = vec![];
     for id in ids {
         let design = MosaicDesign::get(db, id).await.map_err(|e| e.to_string())?;
         designs.push(DesignParams {
+            base: base.clone(),
             id,
             rows: make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
                 design
@@ -247,6 +259,7 @@ pub async fn mosaic_select_page(mut db: Connection<CubeClub>) -> Result<Template
     }
 
     let params = SelectParams {
+        base,
         title: "Mosaic Select".to_string(),
         designs,
     };

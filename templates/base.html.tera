@@ -50,9 +50,15 @@
         <div class="navbar-end">
             <div class="navbar-item">
                 <div class="buttons">
-                    <a class="button is-light">
-                        Log in
-                    </a>
+                    {% if base.user %}
+                        <a class="button is-light" href="/logout">
+                            Log out
+                        </a>
+                    {% else %}
+                        <a class="button is-light" href="/login/google">
+                            Log in
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

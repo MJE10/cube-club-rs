@@ -17,6 +17,7 @@ struct TimerProps {
 pub async fn timer_base(
     mut db: Connection<CubeClub>,
     scrambles: &State<ScrambleManager>,
+    base: Base,
 ) -> Result<Template, String> {
     let scramble = Scramble::generate(&mut db, scrambles, Puzzle::Three)
         .await
@@ -24,7 +25,7 @@ pub async fn timer_base(
     Ok(Template::render(
         "timer",
         TimerProps {
-            base: Base { user: Some(2) },
+            base,
             event: "3x3 Single".to_string(),
             scramble: scramble.scramble,
         },

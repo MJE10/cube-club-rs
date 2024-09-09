@@ -5,6 +5,7 @@ use rocket::http::{CookieJar, Status};
 use rocket::request;
 use rocket_db_pools::Connection;
 use sqlx::SqliteConnection;
+use std::ops::DerefMut;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -28,8 +29,18 @@ impl<'r> request::FromRequest<'r> for User {
         let mut db = request.guard::<Connection<CubeClub>>().await.expect("db");
         if let Some(cookie) = cookies.get_private("user") {
             if let Ok(id) = cookie.value().parse() {
-                return match User::get(&mut db, id).await {
-                    Ok(user) => request::Outcome::Success(user),
+                let res = User::get(&mut db, id).await;
+                let conn: &mut SqliteConnection = db.deref_mut();
+                return match res {
+                    Ok(user) => {
+                        let _ = sqlx::query!(
+                            "UPDATE user SET login_at = unixepoch() WHERE id = ?",
+                            user.id
+                        )
+                        .execute(conn)
+                        .await;
+                        request::Outcome::Success(user)
+                    }
                     _ => request::Outcome::Forward(Status::Unauthorized),
                 };
             }
@@ -72,7 +83,7 @@ impl User {
         }
         // if it doesn't exist, insert it
         let id = sqlx::query!(
-            "INSERT INTO user (sub, full_name, given_name, family_name) VALUES (?, ?, ?, ?) RETURNING id",
+            "INSERT INTO user (sub, full_name, given_name, family_name, created_at, login_at) VALUES (?, ?, ?, ?, unixepoch(), unixepoch()) RETURNING id",
             self.sub,
             self.full_name,
             self.given_name,

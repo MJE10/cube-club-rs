@@ -26,7 +26,7 @@ impl ScrambleManager {
     pub fn new() -> Self {
         let mut scrambles = HashMap::new();
         let mut resetting = HashMap::new();
-        for puzzle in Puzzle::get_all() {
+        for puzzle in [Puzzle::Three] {
             scrambles.insert(puzzle, vec![]);
             resetting.insert(puzzle, false);
         }
@@ -137,7 +137,7 @@ impl Scramble {
         let scramble2 = scramble.clone();
         let puzzle_id = puzzle.id();
         let id = sqlx::query!(
-            "INSERT INTO scramble (scramble, puzzle) VALUES (?, ?) RETURNING id",
+            "INSERT INTO scramble (scramble, puzzle, generated_at) VALUES (?, ?, unixepoch()) RETURNING id",
             scramble2,
             puzzle_id,
         )
