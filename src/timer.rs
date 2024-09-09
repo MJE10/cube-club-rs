@@ -11,6 +11,7 @@ struct TimerProps {
     base: Base,
     event: String,
     scramble: String,
+    scramble_id: i64,
 }
 
 #[get("/timer")]
@@ -28,6 +29,7 @@ pub async fn timer_base(
             base,
             event: "3x3 Single".to_string(),
             scramble: scramble.scramble,
+            scramble_id: scramble.id,
         },
     ))
 }

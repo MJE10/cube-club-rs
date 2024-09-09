@@ -55,12 +55,11 @@
             // Submit button functionality (POST request)
             submitButton.addEventListener('click', function () {
                 let timeValue = timerElement.innerText;
-                fetch('/api/time', {
+                fetch('/api/submit/{{ scramble_id }}/' + timeValue, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({time: timeValue})
+                    }
                 })
                     .then(() => {
                         location.reload()
@@ -100,7 +99,7 @@
                     clearInterval(timerInterval);
                     isRunning = false;
                 }
-            });
+            })
         });
     </script>
 {% endblock body %}

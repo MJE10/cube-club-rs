@@ -1,3 +1,4 @@
+mod leaderboard;
 mod login;
 mod model;
 mod mosaic;
@@ -6,6 +7,7 @@ mod timer;
 #[macro_use]
 extern crate rocket;
 
+use crate::leaderboard::submit_single;
 use crate::login::{google_callback, google_login, logout, GoogleUserInfo};
 use crate::model::config::Config;
 use crate::model::scramble::ScrambleManager;
@@ -60,7 +62,7 @@ async fn index(base: Base, config: Config) -> Result<Template, String> {
 }
 
 #[get("/leaderboard")]
-fn leaderboard(base: Base) -> Template {
+fn leaderboard_view(base: Base) -> Template {
     Template::render("leaderboard", context! {base})
 }
 
@@ -83,10 +85,11 @@ async fn rocket() -> _ {
             routes![
                 index,
                 timer_base,
-                leaderboard,
+                leaderboard_view,
                 google_login,
                 google_callback,
-                logout
+                logout,
+                submit_single,
             ],
         )
         .mount(
