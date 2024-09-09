@@ -56,11 +56,7 @@
 
     <script>
         // Define the list of leaderboard data
-        let leaderboardData = [
-            {user_id: 1, position: 1, name: 'Michael', extra: 3.54},
-            {user_id: 2, position: 2, name: 'Sarah', extra: 4.12},
-            {user_id: 3, position: 3, name: 'John', extra: 4.30}
-        ];
+        let leaderboardData = [];
 
         // Easing function for smooth transitions (ease-in-out cubic)
         function easeInOut(t) {
@@ -88,46 +84,40 @@
             requestAnimationFrame(updateValue); // Start the animation
         }
 
-        // Function to create and append tiles to the leaderboard
-        function createLeaderboardTiles() {
+        // Function to create and append a single tile
+        function createTile(user) {
             const section = document.querySelector('.section');
 
-            // Find and remove any existing tiles, but leave the title and subtitle intact
-            const existingTiles = section.querySelectorAll('.tile');
-            existingTiles.forEach(tile => tile.remove());
+            // Create a div for the tile
+            const tileDiv = document.createElement('div');
+            tileDiv.classList.add('tile');
+            tileDiv.dataset.userId = user.user_id;
 
-            leaderboardData.forEach((user) => {
-                // Create a div for the tile
-                const tileDiv = document.createElement('div');
-                tileDiv.classList.add('tile');
-                tileDiv.dataset.userId = user.user_id;
+            // Create and append the position element
+            const positionIcon = document.createElement('i');
+            positionIcon.classList.add('ph-bold', 'ph-caret-up');
+            positionIcon.style.color = 'green'; // Customize this based on conditions
+            tileDiv.appendChild(positionIcon);
 
-                // Create and append the position element
-                const positionIcon = document.createElement('i');
-                positionIcon.classList.add('ph-bold', 'ph-caret-up');
-                positionIcon.style.color = 'green'; // Customize this based on conditions
-                tileDiv.appendChild(positionIcon);
+            const positionElement = document.createElement('p');
+            positionElement.classList.add('tile-position');
+            positionElement.innerHTML = `<strong>${user.position}</strong>`;
+            tileDiv.appendChild(positionElement);
 
-                const positionElement = document.createElement('p');
-                positionElement.classList.add('tile-position');
-                positionElement.innerHTML = `<strong>${user.position}</strong>`;
-                tileDiv.appendChild(positionElement);
+            // Create and append the name element
+            const nameElement = document.createElement('p');
+            nameElement.classList.add('tile-name');
+            nameElement.textContent = user.name;
+            tileDiv.appendChild(nameElement);
 
-                // Create and append the name element
-                const nameElement = document.createElement('p');
-                nameElement.classList.add('tile-name');
-                nameElement.textContent = user.name;
-                tileDiv.appendChild(nameElement);
+            // Create and append the extra element
+            const extraElement = document.createElement('p');
+            extraElement.classList.add('tile-extra');
+            extraElement.innerHTML = `<strong>${user.extra.toFixed(2)}</strong>`;
+            tileDiv.appendChild(extraElement);
 
-                // Create and append the extra element
-                const extraElement = document.createElement('p');
-                extraElement.classList.add('tile-extra');
-                extraElement.innerHTML = `<strong>${user.extra.toFixed(2)}</strong>`;
-                tileDiv.appendChild(extraElement);
-
-                // Append the tile to the section
-                section.appendChild(tileDiv);
-            });
+            // Append the tile to the section
+            section.appendChild(tileDiv);
         }
 
         // Function to update leaderboard tiles and animate position and "extra" changes
@@ -140,9 +130,13 @@
                 tileMap[userId] = tile;
             });
 
-            // Re-sort tiles based on the new positions
             newData.forEach((user, index) => {
-                const tile = tileMap[user.user_id];
+                // If the user doesn't have a tile yet, create one
+                if (!tileMap[user.user_id]) {
+                    createTile(user);
+                }
+
+                const tile = tileMap[user.user_id] || document.querySelector(`[data-user-id="${user.user_id}"]`);
                 const newPosition = index * (tile.offsetHeight + 5); // Calculate the new position
 
                 tile.style.transform = `translateY(${newPosition}px)`; // Animate tile position
@@ -168,31 +162,32 @@
                 const currentValue = parseFloat(extraElement.textContent); // Get current displayed value
                 animateExtraValue(extraElement, currentValue, user.extra); // Animate to the new value
             });
-
-            setTimeout(() => {
-                leaderboardData.sort(() => Math.random() - 0.5); // Shuffle leaderboard data
-                leaderboardData.forEach((user, index) => {
-                    user.position = index + 1; // Reassign positions
-                    user.extra = (Math.random() * 5).toFixed(2); // Randomize "extra" values between 0 and 5
-                });
-                updateLeaderboardTiles(leaderboardData); // Animate position and extra updates
-            }, 2000);
         }
 
-        // Randomize positions and "extra" data on button click
-        // document.getElementById('shuffle-btn').addEventListener('click', () => {
-        //     leaderboardData.sort(() => Math.random() - 0.5); // Shuffle leaderboard data
-        //     leaderboardData.forEach((user, index) => {
-        //         user.position = index + 1; // Reassign positions
-        //         user.extra = (Math.random() * 5).toFixed(2); // Randomize "extra" values between 0 and 5
-        //     });
-        //     updateLeaderboardTiles(leaderboardData); // Animate position and extra updates
-        // });
+        // Function to fetch leaderboard data and update the leaderboard
+        async function fetchAndUpdateLeaderboard() {
+            let response = await fetch("/api/leaderboard");
+            const newData = await response.json();
+
+            // Merge new data with leaderboardData, adding new entries if they don't exist
+            newData.forEach(newEntry => {
+                const existingEntry = leaderboardData.find(entry => entry.user_id === newEntry.user_id);
+                if (!existingEntry) {
+                    leaderboardData.push(newEntry);
+                } else {
+                    // Update existing entry's position and extra values
+                    existingEntry.position = newEntry.position;
+                    existingEntry.extra = newEntry.extra;
+                }
+            });
+
+            // Update the leaderboard tiles
+            updateLeaderboardTiles(leaderboardData);
+        }
 
         // Call the function when the window loads
         window.onload = () => {
-            createLeaderboardTiles(); // Initial creation of tiles
-            setTimeout(() => updateLeaderboardTiles(leaderboardData), 0); // Apply initial positions
+            setInterval(fetchAndUpdateLeaderboard, 2000); // Fetch and update leaderboard data every 2 seconds
         };
     </script>
 {% endblock body %}

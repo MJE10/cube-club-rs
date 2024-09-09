@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 dotenvy = "0.15.7"
-rocket = { version = "0.5.1", features = ["secrets"] }
+rocket = { version = "0.5.1", features = ["secrets", "json"] }
 rocket_db_pools = { version = "0.2.0", features = ["sqlx_sqlite", "sqlx_macros", "sqlx"] }
 sqlx = "0.7.4"
 serde_json = "1.0.127"

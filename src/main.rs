@@ -7,7 +7,7 @@ mod timer;
 #[macro_use]
 extern crate rocket;
 
-use crate::leaderboard::submit_single;
+use crate::leaderboard::{get_leaderboard, submit_single};
 use crate::login::{google_callback, google_login, logout, GoogleUserInfo};
 use crate::model::config::Config;
 use crate::model::scramble::ScrambleManager;
@@ -19,8 +19,9 @@ use crate::mosaic::{
 use crate::timer::timer_base;
 use dotenvy::dotenv;
 use rocket::fs::FileServer;
-use rocket::request;
+use rocket::response::Redirect;
 use rocket::tokio::sync::RwLock;
+use rocket::{request, Request};
 use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::OAuth2;
@@ -66,6 +67,16 @@ fn leaderboard_view(base: Base) -> Template {
     Template::render("leaderboard", context! {base})
 }
 
+#[catch(401)]
+fn not_authorized(_req: &Request) -> Redirect {
+    Redirect::to("/login/google")
+}
+
+#[catch(404)]
+fn not_found(_req: &Request) -> Redirect {
+    Redirect::to("/")
+}
+
 #[launch]
 #[tokio::main]
 async fn rocket() -> _ {
@@ -79,6 +90,7 @@ async fn rocket() -> _ {
             mosaic: Default::default(),
         })
         .manage(ScrambleManager::new())
+        .register("/", catchers![not_authorized, not_found])
         .mount("/", FileServer::from("static"))
         .mount(
             "/",
@@ -90,6 +102,7 @@ async fn rocket() -> _ {
                 google_callback,
                 logout,
                 submit_single,
+                get_leaderboard,
             ],
         )
         .mount(

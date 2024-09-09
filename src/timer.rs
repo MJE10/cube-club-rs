@@ -1,5 +1,6 @@
 use crate::model::puzzle::Puzzle;
 use crate::model::scramble::{Scramble, ScrambleManager};
+use crate::model::user::User;
 use crate::{Base, CubeClub};
 use rocket::State;
 use rocket_db_pools::Connection;
@@ -19,6 +20,7 @@ pub async fn timer_base(
     mut db: Connection<CubeClub>,
     scrambles: &State<ScrambleManager>,
     base: Base,
+    _user: User,
 ) -> Result<Template, String> {
     let scramble = Scramble::generate(&mut db, scrambles, Puzzle::Three)
         .await

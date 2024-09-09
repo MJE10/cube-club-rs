@@ -4,7 +4,8 @@
     <section class="section">
         <h1 class="title">Cube Club</h1>
         <a href="{{ cg_link }}" target="_blank">CampusGroups Check-in</a><br>
-        <a href="/mosaic">Mosaics</a>
-        <a href="/timer">Timer</a>
+        <a href="/mosaic">Mosaics</a><br>
+        <a href="/timer">Timer</a><br>
+        <a href="/leaderboard">Leaderboard</a>
     </section>
 {% endblock body %}

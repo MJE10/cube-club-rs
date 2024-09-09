@@ -45,6 +45,10 @@
             <a class="navbar-item" href="/mosaic">
                 Mosaics
             </a>
+
+            <a class="navbar-item" href="/timer">
+                Timer
+            </a>
         </div>
 
         <div class="navbar-end">
