@@ -4,10 +4,13 @@ use rocket::futures::TryStreamExt;
 use rocket::http::{CookieJar, Status};
 use rocket::request;
 use rocket_db_pools::Connection;
+use serde::Serialize;
 use sqlx::SqliteConnection;
 use std::ops::DerefMut;
 
-#[derive(Clone)]
+pub const ROLE_ADMIN: i64 = 1;
+
+#[derive(Clone, Serialize)]
 #[allow(dead_code)]
 pub struct User {
     pub id: i64,
@@ -27,26 +30,28 @@ impl<'r> request::FromRequest<'r> for User {
             .await
             .expect("request cookies");
         let mut db = request.guard::<Connection<CubeClub>>().await.expect("db");
-        if let Some(cookie) = cookies.get_private("user") {
-            if let Ok(id) = cookie.value().parse() {
-                let res = User::get(&mut db, id).await;
-                let conn: &mut SqliteConnection = db.deref_mut();
-                return match res {
-                    Ok(user) => {
-                        let _ = sqlx::query!(
-                            "UPDATE user SET login_at = unixepoch() WHERE id = ?",
-                            user.id
-                        )
-                        .execute(conn)
-                        .await;
-                        request::Outcome::Success(user)
-                    }
-                    _ => request::Outcome::Forward(Status::Unauthorized),
-                };
-            }
-        }
 
-        request::Outcome::Forward(Status::Unauthorized)
+        if let Some(Some(id)) = cookies
+            .get_private("user")
+            .map(|cookie| cookie.value().parse().ok())
+        {
+            let res = User::get(&mut db, id).await;
+            let conn: &mut SqliteConnection = db.deref_mut();
+            match res {
+                Ok(user) => {
+                    let _ = sqlx::query!(
+                        "UPDATE user SET login_at = unixepoch() WHERE id = ?",
+                        user.id
+                    )
+                    .execute(conn)
+                    .await;
+                    request::Outcome::Success(user)
+                }
+                _ => request::Outcome::Forward(Status::Unauthorized),
+            }
+        } else {
+            request::Outcome::Forward(Status::Unauthorized)
+        }
     }
 }
 
@@ -58,7 +63,8 @@ impl User {
             id
         )
         .fetch_one(db)
-        .await?;
+        .await
+        .map_err(|e| anyhow!("User not found: {e}"))?;
         Ok(Self {
             id,
             sub: r.sub,
@@ -97,5 +103,14 @@ impl User {
         .id;
         self.id = id;
         Ok(id)
+    }
+
+    pub async fn has_role(&self, db: &mut SqliteConnection, role: i64) -> anyhow::Result<bool> {
+        Ok(sqlx::query!("SELECT COUNT(*) has_role FROM user u JOIN user_role ur on u.id = ur.user WHERE u.id = ? AND ur.id = ?",
+            self.id, role).fetch_one(db).await?.has_role > 0)
+    }
+
+    pub async fn is_admin(&self, db: &mut SqliteConnection) -> anyhow::Result<bool> {
+        self.has_role(db, ROLE_ADMIN).await
     }
 }

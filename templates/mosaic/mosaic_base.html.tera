@@ -1,5 +1,4 @@
 {% extends "base" %}
-{% block title %}{{ title }}{% endblock title %}
 {% block head %}
     <style>
         body {

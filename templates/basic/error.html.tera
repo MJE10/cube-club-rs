@@ -1,0 +1,31 @@
+{% extends "base" %}
+{% block body %}
+    <section class="section">
+        <h1 class="title">Oops!</h1>
+        {% if error_code == "NOT_LOGGED_IN" %}
+            <p>You have to be logged in to do that. Please log in using the button below.</p>
+            {% elif error_code == "NOT_ADMIN" %}
+            <p>Only admins can do that.</p>
+        {% else %}
+            <p>Something went wrong. Please try again, or notify a leader.</p>
+        {% endif %}
+
+        <div class="block"></div>
+        <div class="buttons">
+            {% if error_code == "NOT_LOGGED_IN" %}
+                <a class="button is-light" href="/login/google">
+                    Log in
+                </a>
+            {% else %}
+                <a class="button is-light" href="/">
+                    Home
+                </a>
+            {% endif %}
+        </div>
+
+        {% if error_code and error_code != "NOT_LOGGED_IN" and error_code != "NOT_ADMIN" %}
+            <div class="block"></div>
+            <p>Error code: {{ error_code }}</p>
+        {% endif %}
+    </section>
+{% endblock body %}

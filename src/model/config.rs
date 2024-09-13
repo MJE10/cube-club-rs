@@ -1,3 +1,4 @@
+use crate::model::error::ErrorRecord;
 use crate::CubeClub;
 use rocket::http::Status;
 use rocket::request;
@@ -32,7 +33,10 @@ impl<'r> request::FromRequest<'r> for Config {
         let mut db = request.guard::<Connection<CubeClub>>().await.expect("db");
         match Config::get(&mut db).await {
             Ok(config) => request::Outcome::Success(config),
-            Err(_) => request::Outcome::Error((Status::new(200), ())),
+            Err(e) => {
+                ErrorRecord::blind_try_create(&mut db, None, e).await;
+                request::Outcome::Error((Status::new(500), ()))
+            }
         }
     }
 }

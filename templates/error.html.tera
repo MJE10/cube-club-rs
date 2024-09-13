@@ -1,8 +1,0 @@
-{% extends "base" %}
-{% block title %}Oops{% endblock title %}
-{% block body %}
-    <section class="section">
-        <h1 class="title">Something went wrong.</h1>
-        <h1 class="subtitle">Please try again later.</h1>
-    </section>
-{% endblock body %}

@@ -1,11 +1,33 @@
 {% extends "base" %}
-{% block title %}Cube Club{% endblock title %}
 {% block body %}
     <section class="section">
         <h1 class="title">Cube Club</h1>
         <a href="{{ cg_link }}" target="_blank">CampusGroups Check-in</a><br>
-        <a href="/mosaic">Mosaics</a><br>
-        <a href="/timer">Timer</a><br>
-        <a href="/leaderboard">Leaderboard</a>
+        {% if base.user %}
+            <a href="/mosaic">Mosaics</a><br>
+            <a href="/timer">Timer</a><br>
+            <a href="/leaderboard">Leaderboard</a>
+        {% else %}
+            <div class="block"></div>
+            <div class="buttons">
+                <a class="button is-light" href="/login/google">
+                    Log in
+                </a>
+            </div>
+        {% endif %}
+        {% if base.is_admin %}
+            <br>
+            <div class="block"></div>
+            <h1>Admin Actions</h1>
+            <a onclick="changeUser()">Become someone else</a>
+        {% endif %}
     </section>
+    <script>
+        function changeUser() {
+            let user = prompt("Which user?")
+            if (user) {
+                window.location.href = "/admin/iam_user/" + user;
+            }
+        }
+    </script>
 {% endblock body %}

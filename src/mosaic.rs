@@ -1,3 +1,4 @@
+use crate::model::base::{HtmlBase, Init};
 use crate::model::mosaic_design::MosaicDesign;
 use crate::{App, Base, CubeClub};
 use rand::prelude::SliceRandom;
@@ -102,7 +103,7 @@ struct UserParams {
 
 #[derive(Serialize)]
 struct DesignParams {
-    base: Base,
+    base: HtmlBase,
     id: i64,
     rows: MosaicGridArgs,
 }
@@ -130,96 +131,95 @@ pub async fn mosaic_cancel(row: i64, cell: i64, app: &State<App>) {
 }
 
 #[get("/admin")]
-pub async fn mosaic_admin_page(
-    mut db: Connection<CubeClub>,
-    app: &State<App>,
-    base: Base,
-) -> Result<Template, String> {
-    let mosaic = app.mosaic.read().await;
-    let design = MosaicDesign::get(&mut db, mosaic.design_id)
-        .await
-        .map_err(|e| e.to_string())?;
+pub async fn mosaic_admin_page(init: Init, app: &State<App>) -> Template {
+    init.do_(|mut base| async move {
+        let mosaic = app.mosaic.read().await;
+        let design = MosaicDesign::get(base.db(), mosaic.design_id).await?;
 
-    let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
-        design
-            .pixels
-            .get(h as usize)
-            .and_then(|r| r.get(w as usize))
-            .map(|c| {
-                if !mosaic.available.contains(&(h / 3, w / 3)) {
-                    c.darkened_color().display_rgb().to_string()
-                } else {
-                    c.solid_color().display_rgb().to_string()
-                }
-            })
-            .unwrap_or_else(|| "#ffffff".to_string())
-    });
+        let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+            design
+                .pixels
+                .get(h as usize)
+                .and_then(|r| r.get(w as usize))
+                .map(|c| {
+                    if !mosaic.available.contains(&(h / 3, w / 3)) {
+                        c.darkened_color().display_rgb().to_string()
+                    } else {
+                        c.solid_color().display_rgb().to_string()
+                    }
+                })
+                .unwrap_or_else(|| "#ffffff".to_string())
+        });
 
-    let params = AdminParams {
-        base,
-        title: "Mosaic".to_string(),
-        rows,
-    };
+        let params = AdminParams {
+            base,
+            title: "Mosaic".to_string(),
+            rows,
+        };
 
-    Ok(Template::render("mosaic/mosaic_admin", params))
+        Ok(Template::render("mosaic/mosaic_admin", params))
+    })
+    .await
 }
 
 #[get("/")]
-pub async fn mosaic_user_page(
-    mut db: Connection<CubeClub>,
-    app: &State<App>,
-    base: Base,
-) -> Result<Template, String> {
-    let mut mosaic = app.mosaic.write().await;
+pub async fn mosaic_user_page(init: Init, app: &State<App>) -> Template {
+    init.do_(|mut base| async move {
+        let mut mosaic = app.mosaic.write().await;
 
-    // choose a random available tile
-    let id = match mosaic.available.choose(&mut rand::thread_rng()) {
-        Some(id) => *id,
-        None => {
-            return Ok(Template::render("thanks", context! {base}));
-        }
-    };
-    mosaic.in_progress.push(id);
-    mosaic.available.retain(|x| *x != id);
+        // choose a random available tile
+        let id = match mosaic.available.choose(&mut rand::thread_rng()) {
+            Some(id) => *id,
+            None => {
+                return Ok(Template::render(
+                    "basic/thanks",
+                    context! {
+                        // base
+                    },
+                ));
+            }
+        };
+        mosaic.in_progress.push(id);
+        mosaic.available.retain(|x| *x != id);
 
-    let design = MosaicDesign::get(&mut db, mosaic.design_id)
-        .await
-        .map_err(|e| e.to_string())?;
+        let design = MosaicDesign::get(base.db(), mosaic.design_id).await?;
 
-    let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
-        design
-            .pixels
-            .get(h as usize)
-            .and_then(|r| r.get(w as usize))
-            .map(|c| {
-                if (h / 3, w / 3) != id {
-                    c.darkened_color().display_rgb().to_string()
-                } else {
-                    c.solid_color().display_rgb().to_string()
-                }
-            })
-            .unwrap_or_else(|| "#ffffff".to_string())
-    });
+        let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+            design
+                .pixels
+                .get(h as usize)
+                .and_then(|r| r.get(w as usize))
+                .map(|c| {
+                    if (h / 3, w / 3) != id {
+                        c.darkened_color().display_rgb().to_string()
+                    } else {
+                        c.solid_color().display_rgb().to_string()
+                    }
+                })
+                .unwrap_or_else(|| "#ffffff".to_string())
+        });
 
-    let params = UserParams {
-        base,
-        title: "Mosaic".to_string(),
-        rows,
-        rows2: vec![vec![[0, 1, 2].map(|h| {
-            [0, 1, 2].map(|w| {
-                design
-                    .pixels
-                    .get((id.0 * 3 + h) as usize)
-                    .and_then(|r| r.get((id.1 * 3 + w) as usize))
-                    .map(|c| c.solid_color().display_rgb().to_string())
-                    .unwrap_or_else(|| "#ffffff".to_string())
-            })
-        })]],
-        row: id.0,
-        cell: id.1,
-    };
+        let params = UserParams {
+            base,
+            title: "Mosaic".to_string(),
+            rows,
+            rows2: vec![vec![[0, 1, 2].map(|h| {
+                [0, 1, 2].map(|w| {
+                    design
+                        .pixels
+                        .get((id.0 * 3 + h) as usize)
+                        .and_then(|r| r.get((id.1 * 3 + w) as usize))
+                        .map(|c| c.solid_color().display_rgb().to_string())
+                        .unwrap_or_else(|| "#ffffff".to_string())
+                })
+            })]],
+            row: id.0,
+            cell: id.1,
+        };
 
-    Ok(Template::render("mosaic/mosaic_user", params))
+        Ok(Template::render("mosaic/mosaic_user", params))
+    })
+    .await
 }
 
 #[get("/setDesign/<id>")]
@@ -235,35 +235,34 @@ pub async fn set_design(
 }
 
 #[get("/select")]
-pub async fn mosaic_select_page(
-    mut db: Connection<CubeClub>,
-    base: Base,
-) -> Result<Template, String> {
-    let db = &mut *db;
-    let ids = MosaicDesign::list(db).await.map_err(|e| e.to_string())?;
-    let mut designs = vec![];
-    for id in ids {
-        let design = MosaicDesign::get(db, id).await.map_err(|e| e.to_string())?;
-        designs.push(DesignParams {
-            base: base.clone(),
-            id,
-            rows: make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
-                design
-                    .pixels
-                    .get(h as usize)
-                    .and_then(|r| r.get(w as usize))
-                    .map(|c| c.solid_color().display_rgb().to_string())
-                    .unwrap_or_else(|| "#ffffff".to_string())
-            }),
-        })
-    }
+pub async fn mosaic_select_page(init: Init) -> Template {
+    init.do_(|mut base| async move {
+        let ids = MosaicDesign::list(base.db()).await?;
+        let mut designs = vec![];
+        for id in ids {
+            let design = MosaicDesign::get(base.db(), id).await?;
+            designs.push(DesignParams {
+                base: base.clone(),
+                id,
+                rows: make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
+                    design
+                        .pixels
+                        .get(h as usize)
+                        .and_then(|r| r.get(w as usize))
+                        .map(|c| c.solid_color().display_rgb().to_string())
+                        .unwrap_or_else(|| "#ffffff".to_string())
+                }),
+            })
+        }
 
-    let params = SelectParams {
-        base,
-        title: "Mosaic Select".to_string(),
-        designs,
-    };
-    Ok(Template::render("mosaic/mosaic_select", params))
+        let params = SelectParams {
+            base,
+            title: "Mosaic Select".to_string(),
+            designs,
+        };
+        Ok(Template::render("mosaic/mosaic_select", params))
+    })
+    .await
 }
 
 fn make_mosaic_params(

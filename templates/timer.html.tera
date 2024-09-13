@@ -1,5 +1,4 @@
 {% extends "base" %}
-{% block title %}Cube Club{% endblock title %}
 {% block body %}
     <style>
         body {

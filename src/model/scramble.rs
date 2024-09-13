@@ -26,7 +26,7 @@ impl ScrambleManager {
     pub fn new() -> Self {
         let mut scrambles = HashMap::new();
         let mut resetting = HashMap::new();
-        for puzzle in [Puzzle::Three] {
+        for puzzle in [Puzzle::Three, Puzzle::Two] {
             scrambles.insert(puzzle, vec![]);
             resetting.insert(puzzle, false);
         }
@@ -40,8 +40,10 @@ impl ScrambleManager {
 
     pub async fn get_scramble(&self, puzzle: Puzzle) -> anyhow::Result<String> {
         self.async_refill();
-        let mut v2 = self.scrambles.lock().await;
-        let v = v2.get_mut(&puzzle).unwrap();
+        let mut scrambles = self.scrambles.lock().await;
+        let v = scrambles
+            .get_mut(&puzzle)
+            .ok_or(anyhow!("puzzle not supported for scrambling"))?;
         if v.is_empty() {
             Self::generate_puzzle_count(puzzle, 1)
                 .await

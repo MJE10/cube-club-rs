@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock title %}</title>
+    <title>{% block title %}Cube Club{% endblock title %}</title>
     <link
             rel="stylesheet"
             type="text/css"
@@ -70,6 +70,10 @@
 </nav>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+
+        {% if base.user %}
+        console.log("Welcome, {{ base.user.full_name }}")
+        {% endif %}
 
         // https://bulma.io/documentation/components/navbar/
         // Get all "navbar-burger" elements
