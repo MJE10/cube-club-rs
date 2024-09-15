@@ -3,6 +3,7 @@ use crate::model::user::User;
 use crate::CubeClub;
 use anyhow::anyhow;
 use rocket::response::Redirect;
+use rocket::serde::json::Json;
 use rocket::serde::Serialize;
 use rocket::{request, Request};
 use rocket_db_pools::Connection;
@@ -141,6 +142,20 @@ impl Init {
                     .unwrap_or("".to_string())
             ))
         })
+    }
+
+    pub async fn do_api<
+        F: FnOnce(Base) -> Fut,
+        Fut: Future<Output = anyhow::Result<T>>,
+        T: Serialize,
+    >(
+        self,
+        stuff: F,
+    ) -> Result<Json<T>, String> {
+        self.do_internal(stuff)
+            .await
+            .map(|t| Json(t))
+            .map_err(|code| code.unwrap_or("unknown error".to_string()))
     }
 }
 

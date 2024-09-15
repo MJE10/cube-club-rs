@@ -19,7 +19,8 @@
             <br>
             <div class="block"></div>
             <h1>Admin Actions</h1>
-            <a onclick="changeUser()">Become someone else</a>
+            <a onclick="changeUser()">Become someone else</a><br>
+            <a href="/mosaic/select">Select mosaic</a>
         {% endif %}
     </section>
     <script>

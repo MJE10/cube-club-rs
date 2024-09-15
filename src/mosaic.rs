@@ -1,95 +1,61 @@
 use crate::model::base::{HtmlBase, Init};
+use crate::model::config::Config;
 use crate::model::mosaic_design::MosaicDesign;
-use crate::{App, Base, CubeClub};
-use rand::prelude::SliceRandom;
-use rocket::form::validate::Contains;
+use crate::model::mosaic_tile::MosaicTile;
+use crate::Base;
 use rocket::response::Redirect;
-use rocket::State;
-use rocket_db_pools::Connection;
-use rocket_dyn_templates::{context, Template};
+use rocket::serde::json::Json;
+use rocket_dyn_templates::Template;
 use serde::Serialize;
-use sqlx::SqliteConnection;
 
-pub struct Mosaic {
-    design_id: i64,
-    available: Vec<(i64, i64)>,
-    in_progress: Vec<(i64, i64)>,
-}
-
-impl Default for Mosaic {
-    fn default() -> Self {
-        Self {
-            design_id: 1,
-            available: vec![],
-            in_progress: vec![],
+#[post("/claim/<row>/<col>")]
+pub async fn mosaic_claim(init: Init, row: i64, col: i64) -> Result<Json<bool>, String> {
+    init.do_api(|mut base| async move {
+        let user = base.require_any_user()?.id;
+        let current_assigned = MosaicTile::get_user(base.db(), row, col).await;
+        if current_assigned.is_none() {
+            MosaicTile::set_user(base.db(), row, col, Some(user)).await?;
+            Ok(true)
+        } else if current_assigned == Some(user) || base.require_admin_user().is_ok() {
+            MosaicTile::set_user(base.db(), row, col, None).await?;
+            Ok(true)
+        } else {
+            Ok(false)
         }
-    }
+    })
+    .await
 }
 
-impl Mosaic {
-    pub async fn set_all(&mut self) -> anyhow::Result<()> {
-        self.available = vec![];
-        self.in_progress = vec![];
-        Ok(())
-    }
-
-    pub async fn clear_all(&mut self, db: &mut SqliteConnection) -> anyhow::Result<()> {
-        let design = MosaicDesign::get(db, self.design_id).await?;
-        self.available = (0..design.height_pixels)
-            .step_by(3)
-            .flat_map(|h| {
-                (0..design.width_pixels)
-                    .step_by(3)
-                    .map(|w| (w / 3, h / 3))
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-        Ok(())
-    }
+#[get("/tiles")]
+pub async fn mosaic_get_tiles(init: Init) -> Result<Json<Vec<MosaicTile>>, String> {
+    init.do_api(|mut base| async move {
+        base.require_any_user()?;
+        Ok(MosaicTile::get_all(base.db()).await?)
+    })
+    .await
 }
 
-#[post("/clear")]
-pub async fn mosaic_clear(mut db: Connection<CubeClub>, app: &State<App>) -> Result<(), String> {
-    app.mosaic
-        .write()
-        .await
-        .clear_all(&mut db)
-        .await
-        .map_err(|e| e.to_string())
+#[get("/reset")]
+pub async fn mosaic_reset_tiles(init: Init) -> Redirect {
+    init.do_redirect(|mut base| async move {
+        base.require_admin_user()?;
+        MosaicTile::reset_all(base.db()).await?;
+        Ok(Redirect::to("/mosaic"))
+    })
+    .await
 }
 
-#[post("/reset")]
-pub async fn mosaic_reset(app: &State<App>) -> Result<(), String> {
-    app.mosaic
-        .write()
-        .await
-        .set_all()
-        .await
-        .map_err(|e| e.to_string())
+#[get("/reset-me")]
+pub async fn mosaic_reset_own_tiles(init: Init) -> Redirect {
+    init.do_redirect(|mut base| async move {
+        let user = base.require_any_user()?.id;
+        MosaicTile::reset_user(base.db(), user).await?;
+        Ok(Redirect::to("/mosaic"))
+    })
+    .await
 }
 
-#[post("/toggle/<row>/<cell>")]
-pub async fn mosaic_toggle(row: i64, cell: i64, app: &State<App>) -> Result<(), String> {
-    let mut mosaic = app.mosaic.write().await;
-    let id = (row, cell);
-
-    if mosaic.available.contains(id) {
-        mosaic.available.retain(|x| *x != id);
-    } else {
-        mosaic.available.push(id);
-    }
-    mosaic.in_progress.retain(|x| *x != id);
-    Ok(())
-}
-
-type MosaicGridArgs = Vec<Vec<[[String; 3]; 3]>>;
-
-#[derive(Serialize)]
-struct AdminParams {
-    base: Base,
-    title: String,
-    rows: MosaicGridArgs,
-}
+type MosaicGridArgs = Vec<Vec<Vec<Vec<String>>>>;
 
 #[derive(Serialize)]
 struct UserParams {
@@ -97,8 +63,51 @@ struct UserParams {
     title: String,
     rows: MosaicGridArgs,
     rows2: MosaicGridArgs,
-    row: i64,
-    cell: i64,
+    initial_data: Vec<MosaicTile>,
+}
+
+#[get("/")]
+pub async fn mosaic_user_page(init: Init) -> Template {
+    init.do_(|mut base| async move {
+        Ok(Template::render(
+            "mosaic/mosaic_user",
+            UserParams {
+                initial_data: MosaicTile::get_all(base.db()).await?,
+                base,
+                title: "Mosaic".to_string(),
+                rows: (0..10)
+                    .map(|_| {
+                        (0..10)
+                            .map(|_| {
+                                (0..3)
+                                    .map(|_| (0..3).map(|_| "#ff0000".to_string()).collect())
+                                    .collect()
+                            })
+                            .collect()
+                    })
+                    .collect(),
+                rows2: (0..10)
+                    .map(|_| (0..10).map(|_| vec![vec!["#ff0000".to_string()]]).collect())
+                    .collect(),
+            },
+        ))
+    })
+    .await
+}
+
+#[get("/setDesign/<id>")]
+pub async fn set_design(init: Init, id: i64) -> Redirect {
+    init.do_redirect(|mut base| async move {
+        base.require_admin_user()?;
+
+        let mut config = Config::get(base.db()).await?;
+        config.mosaic_design_id = id;
+        config.update(base.db()).await?;
+
+        MosaicTile::reset_all(base.db()).await?;
+        Ok(Redirect::to("/mosaic"))
+    })
+    .await
 }
 
 #[derive(Serialize)]
@@ -115,128 +124,11 @@ struct SelectParams {
     designs: Vec<DesignParams>,
 }
 
-#[post("/done/<row>/<cell>")]
-pub async fn mosaic_done(row: i64, cell: i64, app: &State<App>) {
-    let mut mosaic = app.mosaic.write().await;
-    mosaic.in_progress.retain(|x| *x != (row, cell));
-}
-
-#[post("/cancel/<row>/<cell>")]
-pub async fn mosaic_cancel(row: i64, cell: i64, app: &State<App>) {
-    let mut mosaic = app.mosaic.write().await;
-    if mosaic.in_progress.contains(&(row, cell)) {
-        mosaic.available.push((row, cell));
-        mosaic.in_progress.retain(|x| *x != (row, cell));
-    }
-}
-
-#[get("/admin")]
-pub async fn mosaic_admin_page(init: Init, app: &State<App>) -> Template {
-    init.do_(|mut base| async move {
-        let mosaic = app.mosaic.read().await;
-        let design = MosaicDesign::get(base.db(), mosaic.design_id).await?;
-
-        let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
-            design
-                .pixels
-                .get(h as usize)
-                .and_then(|r| r.get(w as usize))
-                .map(|c| {
-                    if !mosaic.available.contains(&(h / 3, w / 3)) {
-                        c.darkened_color().display_rgb().to_string()
-                    } else {
-                        c.solid_color().display_rgb().to_string()
-                    }
-                })
-                .unwrap_or_else(|| "#ffffff".to_string())
-        });
-
-        let params = AdminParams {
-            base,
-            title: "Mosaic".to_string(),
-            rows,
-        };
-
-        Ok(Template::render("mosaic/mosaic_admin", params))
-    })
-    .await
-}
-
-#[get("/")]
-pub async fn mosaic_user_page(init: Init, app: &State<App>) -> Template {
-    init.do_(|mut base| async move {
-        let mut mosaic = app.mosaic.write().await;
-
-        // choose a random available tile
-        let id = match mosaic.available.choose(&mut rand::thread_rng()) {
-            Some(id) => *id,
-            None => {
-                return Ok(Template::render(
-                    "basic/thanks",
-                    context! {
-                        // base
-                    },
-                ));
-            }
-        };
-        mosaic.in_progress.push(id);
-        mosaic.available.retain(|x| *x != id);
-
-        let design = MosaicDesign::get(base.db(), mosaic.design_id).await?;
-
-        let rows = make_mosaic_params(design.height_pixels, design.width_pixels, |h, w| {
-            design
-                .pixels
-                .get(h as usize)
-                .and_then(|r| r.get(w as usize))
-                .map(|c| {
-                    if (h / 3, w / 3) != id {
-                        c.darkened_color().display_rgb().to_string()
-                    } else {
-                        c.solid_color().display_rgb().to_string()
-                    }
-                })
-                .unwrap_or_else(|| "#ffffff".to_string())
-        });
-
-        let params = UserParams {
-            base,
-            title: "Mosaic".to_string(),
-            rows,
-            rows2: vec![vec![[0, 1, 2].map(|h| {
-                [0, 1, 2].map(|w| {
-                    design
-                        .pixels
-                        .get((id.0 * 3 + h) as usize)
-                        .and_then(|r| r.get((id.1 * 3 + w) as usize))
-                        .map(|c| c.solid_color().display_rgb().to_string())
-                        .unwrap_or_else(|| "#ffffff".to_string())
-                })
-            })]],
-            row: id.0,
-            cell: id.1,
-        };
-
-        Ok(Template::render("mosaic/mosaic_user", params))
-    })
-    .await
-}
-
-#[get("/setDesign/<id>")]
-pub async fn set_design(
-    id: i64,
-    app: &State<App>,
-    mut db: Connection<CubeClub>,
-) -> Result<Redirect, String> {
-    let mut mosaic = app.mosaic.write().await;
-    mosaic.design_id = id;
-    mosaic.clear_all(&mut db).await.map_err(|e| e.to_string())?;
-    Ok(Redirect::to("/mosaic/admin"))
-}
-
 #[get("/select")]
 pub async fn mosaic_select_page(init: Init) -> Template {
     init.do_(|mut base| async move {
+        base.require_admin_user()?;
+
         let ids = MosaicDesign::list(base.db()).await?;
         let mut designs = vec![];
         for id in ids {
@@ -275,8 +167,9 @@ fn make_mosaic_params(
     for h in (0..height).step_by(3) {
         let mut row = vec![];
         for w in (0..width).step_by(3) {
-            let cube: [[String; 3]; 3] =
-                [0, 1, 2].map(|h2| [0, 1, 2].map(|w2| colors(h + h2, w + w2)));
+            let cube: Vec<Vec<String>> = (0..3)
+                .map(|h2| (0..3).map(|w2| colors(h + h2, w + w2)).collect())
+                .collect();
             row.push(cube);
         }
         rows.push(row);

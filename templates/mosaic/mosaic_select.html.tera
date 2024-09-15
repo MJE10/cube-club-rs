@@ -4,7 +4,7 @@
 {% block body %}
     {{ super() }}
     <div class="buttons is-flex is-justify-content-center">
-        <a class="button is-warning" href="/mosaic/admin">
+        <a class="button is-warning" href="/mosaic">
             <button>Cancel</button>
         </a>
     </div>

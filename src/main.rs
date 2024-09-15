@@ -15,25 +15,19 @@ use crate::model::base::{error_catcher, Base, Init};
 use crate::model::config::Config;
 use crate::model::scramble::ScrambleManager;
 use crate::mosaic::{
-    mosaic_admin_page, mosaic_cancel, mosaic_clear, mosaic_done, mosaic_reset, mosaic_select_page,
-    mosaic_toggle, mosaic_user_page, set_design, Mosaic,
+    mosaic_claim, mosaic_get_tiles, mosaic_reset_own_tiles, mosaic_reset_tiles, mosaic_select_page,
+    mosaic_user_page, set_design,
 };
 use crate::timer::{leaderboard_view, timer_base};
 use dotenvy::dotenv;
 use rocket::fs::FileServer;
-use rocket::tokio::sync::RwLock;
 use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::OAuth2;
-use std::sync::Arc;
 
 #[derive(Database)]
 #[database("cube_club")]
 struct CubeClub(sqlx::SqlitePool);
-
-pub struct App {
-    mosaic: Arc<RwLock<Mosaic>>,
-}
 
 #[get("/")]
 async fn index(init: Init, config: Config) -> Template {
@@ -66,9 +60,6 @@ async fn rocket() -> _ {
         .attach(Template::fairing())
         .attach(OAuth2::<GoogleUserInfo>::fairing("google"))
         .attach(CubeClub::init())
-        .manage(App {
-            mosaic: Default::default(),
-        })
         .manage(ScrambleManager::new())
         .register("/", catchers![error_catcher])
         .mount("/", FileServer::from("static"))
@@ -90,20 +81,12 @@ async fn rocket() -> _ {
         .mount(
             "/mosaic",
             routes![
-                mosaic_admin_page,
                 mosaic_user_page,
                 mosaic_select_page,
-                set_design
+                set_design,
+                mosaic_reset_tiles,
+                mosaic_reset_own_tiles
             ],
         )
-        .mount(
-            "/api/mosaic",
-            routes![
-                mosaic_clear,
-                mosaic_reset,
-                mosaic_toggle,
-                mosaic_cancel,
-                mosaic_done
-            ],
-        )
+        .mount("/api/mosaic", routes![mosaic_claim, mosaic_get_tiles])
 }

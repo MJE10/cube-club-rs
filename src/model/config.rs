@@ -23,6 +23,18 @@ impl Config {
             mosaic_design_id: r.mosaic_design,
         })
     }
+
+    pub async fn update(&self, db: &mut SqliteConnection) -> anyhow::Result<()> {
+        sqlx::query!(
+            "UPDATE _config SET competition = ?, cg_link = ?, mosaic_design = ?",
+            self.competition_id,
+            self.cg_link,
+            self.mosaic_design_id
+        )
+        .execute(db)
+        .await?;
+        Ok(())
+    }
 }
 
 #[rocket::async_trait]
