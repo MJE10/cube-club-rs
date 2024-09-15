@@ -5,6 +5,14 @@
             display: none !important;
         }
 
+        body {
+            height: 100vh;
+        }
+
+        #leaderboard-tiles {
+            position: relative;
+        }
+
         .tile {
             border: 1px solid white;
             border-radius: 10px;
@@ -17,7 +25,7 @@
 
             margin-bottom: 5px;
 
-            position: relative; /* Necessary for position animation */
+            position: absolute; /* Necessary for position animation */
             transition: transform 1.25s ease; /* Smooth transition for movement */
             z-index: 1; /* Prevent overlapping text */
         }
@@ -85,7 +93,7 @@
 
         // Function to create and append a single tile
         function createTile(user) {
-            const section = document.querySelector('.section');
+            const section = document.querySelector('#leaderboard-tiles');
 
             // Create a div for the tile
             const tileDiv = document.createElement('div');
@@ -136,7 +144,7 @@
                 }
 
                 const tile = tileMap[user.user_id] || document.querySelector(`[data-user-id="${user.user_id}"]`);
-                const newPosition = index * (tile.offsetHeight + 5); // Calculate the new position
+                const newPosition = (user.position - 1) * (tile.offsetHeight + 5); // Calculate the new position
 
                 tile.style.transform = `translateY(${newPosition}px)`; // Animate tile position
 
@@ -184,9 +192,14 @@
             updateLeaderboardTiles(leaderboardData);
         }
 
+        async function repeatFetch() {
+            await fetchAndUpdateLeaderboard();
+            setTimeout(repeatFetch, 2000);
+        }
+
         // Call the function when the window loads
         window.onload = () => {
-            setInterval(fetchAndUpdateLeaderboard, 2000); // Fetch and update leaderboard data every 2 seconds
+            repeatFetch();
         };
     </script>
 {% endblock body %}
