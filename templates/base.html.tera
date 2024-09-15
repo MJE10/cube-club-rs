@@ -21,6 +21,11 @@
     {% block head %}
     {% endblock head %}
 </head>
+<style>
+    body {
+        height: 85vh;
+    }
+</style>
 <body>
 <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">

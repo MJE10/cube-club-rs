@@ -3,7 +3,7 @@
     <div id="full-screen-div"></div>
     <style>
         body {
-            height: 100vh;
+            /*height: 100vh;*/
             display: flex;
             flex-direction: column;
         }
@@ -67,15 +67,17 @@
             // Submit button functionality (POST request)
             submitButton.addEventListener('click', function () {
                 let timeValue = timerElement.innerText;
-                fetch('/api/submit/{{ scramble_id }}/' + timeValue, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(() => {
-                        location.reload()
-                    });
+                if (parseFloat(timeValue) !== 0) {
+                    fetch('/api/submit/{{ scramble_id }}/' + timeValue, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(() => {
+                            location.reload()
+                        });
+                }
             });
 
             // Keyboard button functionality

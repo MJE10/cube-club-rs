@@ -20,7 +20,6 @@
         </div>
     </section>
     <div class="block"></div>
-    <div class="block"></div>
     <script>
         const user = {{ base.user.id }};
 
@@ -83,7 +82,6 @@
                             if (new_tile.user === user) {
                                 e1.children[y].children[x].style.backgroundColor = brightColors[new_tile.colors[y][x]]
                             } else {
-                                console.log(new_tile.colors[y][x])
                                 e1.children[y].children[x].style.backgroundColor = darkColors[new_tile.colors[y][x]]
                             }
                         }
