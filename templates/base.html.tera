@@ -42,13 +42,15 @@
                 Home
             </a>
 
-            <a class="navbar-item" href="/mosaic">
-                Mosaics
-            </a>
+            {% if base.user %}
+                <a class="navbar-item" href="/mosaic">
+                    Mosaics
+                </a>
 
-            <a class="navbar-item" href="/timer">
-                Timer
-            </a>
+                <a class="navbar-item" href="/timer">
+                    Timer
+                </a>
+            {% endif %}
         </div>
 
         <div class="navbar-end">
@@ -60,7 +62,7 @@
                         </a>
                     {% else %}
                         <a class="button is-light" href="/login/google">
-                            Log in
+                            Log in with RIT
                         </a>
                     {% endif %}
                 </div>
