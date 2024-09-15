@@ -1,10 +1,23 @@
 {% extends "base" %}
 {% block body %}
+    <div id="full-screen-div"></div>
     <style>
         body {
             height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        #full-screen-div {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .button {
+            z-index: 11;
         }
     </style>
     <section class="section has-text-centered paddingless">
@@ -70,11 +83,12 @@
                 let userInput = prompt('Enter time (in seconds):');
                 if (userInput && !isNaN(userInput)) {
                     timerElement.innerText = parseFloat(userInput).toFixed(2);
+                    tapToStartElement.style.visibility = 'hidden';
                 }
             });
 
             // Timer functionality for click interaction
-            let timerSection = document.querySelector('.section.is-flex');
+            let timerSection = document.querySelector('#full-screen-div');
 
             // Function to start the timer
             function startTimer() {
