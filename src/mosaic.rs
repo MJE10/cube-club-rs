@@ -80,14 +80,48 @@ pub async fn mosaic_user_page(init: Init) -> Template {
                         (0..10)
                             .map(|_| {
                                 (0..3)
-                                    .map(|_| (0..3).map(|_| "#ff0000".to_string()).collect())
+                                    .map(|_| (0..3).map(|_| "#ffffff".to_string()).collect())
                                     .collect()
                             })
                             .collect()
                     })
                     .collect(),
-                rows2: (0..10)
-                    .map(|_| (0..10).map(|_| vec![vec!["#ff0000".to_string()]]).collect())
+                rows2: vec![vec![(0..3)
+                    .map(|_| (0..3).map(|_| "#ffffff".to_string()).collect())
+                    .collect()]],
+            },
+        ))
+    })
+    .await
+}
+
+#[derive(Serialize)]
+struct ViewerParams {
+    base: Base,
+    title: String,
+    rows: MosaicGridArgs,
+    initial_data: Vec<MosaicTile>,
+}
+
+#[get("/viewer")]
+pub async fn mosaic_viewer(init: Init) -> Template {
+    init.do_(|mut base| async move {
+        Ok(Template::render(
+            "mosaic/mosaic_viewer",
+            ViewerParams {
+                initial_data: MosaicTile::get_all(base.db()).await?,
+                base,
+                title: "Mosaic".to_string(),
+                rows: (0..10)
+                    .map(|_| {
+                        (0..10)
+                            .map(|_| {
+                                (0..3)
+                                    .map(|_| (0..3).map(|_| "#ffffff".to_string()).collect())
+                                    .collect()
+                            })
+                            .collect()
+                    })
                     .collect(),
             },
         ))

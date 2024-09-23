@@ -1,0 +1,67 @@
+{% extends "mosaic/mosaic_base" %}
+{% import "macros" as macros %}
+
+{% block body %}
+    {{ super() }}
+    {{ macros::mosaic(rows=rows) }}
+    <div class="block"></div>
+    <style>
+        .mosaic-grid-cube {
+            padding: 0;
+        }
+    </style>
+    <script>
+        let rows = document.getElementsByClassName("mosaic-grid")[0].children;
+
+        let data = [
+            {% for x in initial_data %}
+            {
+                "row": {{ x.row }},
+                "col": {{ x.col }},
+                "user": {% if x.user %}{{ x.user }}{% else %}null{% endif %},
+                "colors": {{ x.colors }},
+            },
+            {% endfor %}
+        ];
+
+        async function fetchAndUpdate() {
+            let new_data = await (await fetch("/api/mosaic/tiles")).json();
+            await update(new_data, false);
+        }
+
+        async function update(new_data, force_update) {
+            for (let new_tile of new_data) {
+                let found_identical = false;
+                for (let old_tile of data) {
+                    if (new_tile === old_tile) {
+                        found_identical = true;
+                        break;
+                    }
+                }
+                if (!found_identical || force_update) {
+                    let e1 = rows[new_tile.row].children[new_tile.col];
+                    for (let y = 0; y < 3; y++) {
+                        for (let x = 0; x < 3; x++) {
+                            if (new_tile.user != null) {
+                                e1.children[y].children[x].style.backgroundColor = brightColors[new_tile.colors[y][x]];
+                            } else {
+                                e1.children[y].children[x].style.backgroundColor = darkColors[new_tile.colors[y][x]];
+                            }
+                        }
+                    }
+                }
+            }
+            data = new_data;
+        }
+
+        async function reloadDataAlways() {
+            await fetchAndUpdate();
+            setTimeout(reloadDataAlways, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            update(data, true);
+            reloadDataAlways();
+        });
+    </script>
+{% endblock body %}

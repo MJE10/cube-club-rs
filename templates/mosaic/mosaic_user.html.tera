@@ -9,46 +9,33 @@
     <div class="block"></div>
     <section class="section paddingless">
         <div class="buttons is-flex is-justify-content-center">
-            {% if base.is_admin %}
+            <p>View</p>
+            <label id="claim-switch" class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+            </label>
+            <p>Claim</p>
+            {#            <a class="button is-danger" href="/mosaic/reset-me"> #}
+            {#                Reset Mine #}
+            {#            </a> #}
+        </div>
+        {% if base.is_admin %}
+            <div class="buttons is-flex is-justify-content-center">
                 <a class="button is-danger" href="/mosaic/reset">
                     Reset All
                 </a>
-            {% endif %}
-            <a class="button is-danger" href="/mosaic/reset-me">
-                Reset Mine
-            </a>
-        </div>
+            </div>
+        {% endif %}
     </section>
     <div class="block"></div>
     <script>
         const user = {{ base.user.id }};
-
-        const darkColors = {
-            "Red": "#570100",
-            "Green": "#003810",
-            "Blue": "#000053",
-            "Yellow": "#4e3c00",
-            "White": "#3b3b3b",
-            "Orange": "#583602",
-        }
-        const brightColors = {
-            "Red": "#ff0700",
-            "Green": "#00fa45",
-            "Blue": "#0400ff",
-            "Yellow": "#ffd200",
-            "White": "#ffffff",
-            "Orange": "#ff8000",
-        }
+        let cube = [0, 0];
 
         let rows = document.getElementsByClassName("mosaic-grid")[0].children;
         let rows2 = document.getElementsByClassName("mosaic-grid")[1].children;
 
-        const White = "White";
-        const Yellow = "Yellow";
-        const Green = "Green";
-        const Blue = "Blue";
-        const Orange = "Orange";
-        const Red = "Red";
+        let claimSwitch = document.getElementById("claim-switch");
 
         let data = [
             {% for x in initial_data %}
@@ -80,19 +67,21 @@
                     for (let y = 0; y < 3; y++) {
                         for (let x = 0; x < 3; x++) {
                             if (new_tile.user === user) {
-                                e1.children[y].children[x].style.backgroundColor = brightColors[new_tile.colors[y][x]]
+                                e1.children[y].children[x].style.backgroundColor = brightColors[new_tile.colors[y][x]];
                             } else {
-                                e1.children[y].children[x].style.backgroundColor = darkColors[new_tile.colors[y][x]]
+                                e1.children[y].children[x].style.backgroundColor = darkColors[new_tile.colors[y][x]];
+                            }
+                            if (new_tile.row === cube[0] && new_tile.col === cube[1]) {
+                                rows2[0].children[0].children[y].children[x].style.backgroundColor = brightColors[new_tile.colors[y][x]];
                             }
                         }
                     }
-                    let e2 = rows2[new_tile.row].children[new_tile.col].children[0].children[0];
                     if (new_tile.user === user) {
-                        e2.style.backgroundColor = brightColors["Green"];
+                        e1.style.backgroundColor = brightColors["Green"];
                     } else if (new_tile.user == null) {
-                        e2.style.backgroundColor = "grey";
+                        e1.style.backgroundColor = "grey";
                     } else {
-                        e2.style.backgroundColor = brightColors["Red"];
+                        e1.style.backgroundColor = brightColors["Red"];
                     }
                 }
             }
@@ -107,13 +96,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             for (let row = 0; row < rows.length; row++) {
                 let cells = rows[row].children;
-                let cells2 = rows2[row].children;
                 for (let cell = 0; cell < cells.length; cell++) {
                     cells[cell].addEventListener("click", () => {
-                        fetch(`/api/mosaic/claim/` + row + "/" + cell, {method: 'POST'}).then(fetchAndUpdate);
-                    });
-                    cells2[cell].addEventListener("click", () => {
-                        fetch(`/api/mosaic/claim/` + row + "/" + cell, {method: 'POST'}).then(fetchAndUpdate);
+                        cube = [row, cell];
+                        if (claimSwitch.children[0].checked) {
+                            fetch(`/api/mosaic/claim/` + row + "/" + cell, {method: 'POST'}).then(fetchAndUpdate);
+                        } else {
+                            update(data, true);
+                        }
                     });
                 }
             }

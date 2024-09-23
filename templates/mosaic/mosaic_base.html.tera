@@ -33,15 +33,13 @@
             align-items: center;
             flex-grow: 1;
             width: 100%;
-            margin-bottom: 4px;
         }
 
         .mosaic-grid-cube {
             flex-grow: 1;
             height: 100%;
-            border: 1px solid black;
-            margin-left: 2px;
-            margin-right: 2px;
+            /*border: 1px solid black;*/
+            padding: 1px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -67,6 +65,30 @@
 
 {% block body %}
     <script>
+        const darkColors = {
+            "Red": "#570100",
+            "Green": "#003810",
+            "Blue": "#000053",
+            "Yellow": "#4e3c00",
+            "White": "#3b3b3b",
+            "Orange": "#583602",
+        }
+        const brightColors = {
+            "Red": "#ff0700",
+            "Green": "#00fa45",
+            "Blue": "#0400ff",
+            "Yellow": "#ffd200",
+            "White": "#ffffff",
+            "Orange": "#ff8000",
+        }
+
+        const White = "White";
+        const Yellow = "Yellow";
+        const Green = "Green";
+        const Blue = "Blue";
+        const Orange = "Orange";
+        const Red = "Red";
+
         function resize_mosaic_grids() {
             let grids = document.getElementsByClassName("mosaic-grid");
             for (let grid of grids) {

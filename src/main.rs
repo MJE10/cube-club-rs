@@ -16,7 +16,7 @@ use crate::model::config::Config;
 use crate::model::scramble::ScrambleManager;
 use crate::mosaic::{
     mosaic_claim, mosaic_get_tiles, mosaic_reset_own_tiles, mosaic_reset_tiles, mosaic_select_page,
-    mosaic_user_page, set_design,
+    mosaic_user_page, mosaic_viewer, set_design,
 };
 use crate::timer::{leaderboard_view, timer_base};
 use dotenvy::dotenv;
@@ -82,10 +82,11 @@ async fn rocket() -> _ {
             "/mosaic",
             routes![
                 mosaic_user_page,
+                mosaic_viewer,
                 mosaic_select_page,
                 set_design,
                 mosaic_reset_tiles,
-                mosaic_reset_own_tiles
+                mosaic_reset_own_tiles,
             ],
         )
         .mount("/api/mosaic", routes![mosaic_claim, mosaic_get_tiles])
