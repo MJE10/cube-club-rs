@@ -6,24 +6,32 @@ use rocket_db_pools::Connection;
 use serde::Serialize;
 use sqlx::SqliteConnection;
 
-#[post("/api/submit/<scramble>/<time>")]
+#[post("/api/submit/<scramble>/<time>/<penalty>")]
 pub async fn submit_single(
     scramble: i64,
     time: String,
+    penalty: i64,
     config: Config,
     user: User,
     mut db: Connection<CubeClub>,
 ) -> Result<(), String> {
+    let penalty = match penalty {
+        0 => "",
+        2 => "+2",
+        8 => "DNF",
+        _ => return Err("Invalid penalty".to_string()),
+    };
     let conn: &mut SqliteConnection = &mut db;
     let time: f64 = time.parse().map_err(|_| "invalid time format")?;
     let time: i64 = (time * 1000.0) as i64;
     sqlx::query!(
         "INSERT INTO timed_solve (scramble, user, competition, time_ms, penalty, completed_at) \
-    VALUES (?, ?, ?, ?, '', unixepoch());",
+    VALUES (?, ?, ?, ?, ?, unixepoch());",
         scramble,
         user.id,
         config.competition_id,
-        time
+        time,
+        penalty
     )
     .execute(conn)
     .await
@@ -55,7 +63,7 @@ pub async fn get_leaderboard(
                         MIN(ts.time_ms) AS lowest_time_ms
                     FROM timed_solve ts
                              JOIN user u ON ts.user = u.id
-                    WHERE ts.competition = ?
+                    WHERE ts.competition = ? AND (ts.penalty != 'DNF' OR ts.penalty IS NULL)
                     GROUP BY u.given_name, u.family_name
                 )
                 SELECT

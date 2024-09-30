@@ -3,7 +3,7 @@
     <section class="section">
         <h1 class="title">Cube Club</h1>
         {% if base.user %}
-            <a href="{{ cg_link }}" target="_blank">CampusGroups Check-in</a><br>
+            <a href="/cg" target="_blank">CampusGroups Check-in</a><br>
             <a href="/mosaic">Mosaics</a><br>
             <a href="/timer">Timer</a><br>
             <a href="/leaderboard">Leaderboard</a>

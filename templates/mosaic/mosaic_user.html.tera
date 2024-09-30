@@ -100,6 +100,12 @@
                     cells[cell].addEventListener("click", () => {
                         cube = [row, cell];
                         if (claimSwitch.children[0].checked) {
+                            for (let tile of data) {
+                                if (tile.col === cell && tile.row === row && tile.user == null) {
+                                    tile.user = user;
+                                }
+                            }
+                            update(data, true);
                             fetch(`/api/mosaic/claim/` + row + "/" + cell, {method: 'POST'}).then(fetchAndUpdate);
                         } else {
                             update(data, true);

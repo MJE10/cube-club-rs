@@ -28,11 +28,8 @@ pub async fn mosaic_claim(init: Init, row: i64, col: i64) -> Result<Json<bool>, 
 
 #[get("/tiles")]
 pub async fn mosaic_get_tiles(init: Init) -> Result<Json<Vec<MosaicTile>>, String> {
-    init.do_api(|mut base| async move {
-        base.require_any_user()?;
-        Ok(MosaicTile::get_all(base.db()).await?)
-    })
-    .await
+    init.do_api(|mut base| async move { Ok(MosaicTile::get_all(base.db()).await?) })
+        .await
 }
 
 #[get("/reset")]

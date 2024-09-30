@@ -3,7 +3,6 @@
     <div id="full-screen-div"></div>
     <style>
         body {
-            /*height: 100vh;*/
             display: flex;
             flex-direction: column;
         }
@@ -44,9 +43,51 @@
                 Submit
             </a>
         </div>
+        <div class="buttons is-flex is-justify-content-center">
+            <div id="main-dropdown" class="dropdown">
+                <div class="dropdown-trigger">
+                    <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+                        <span id="dropdown-label"> No Penalty </span>
+                        <span class="icon is-small">
+                            <i class="ph ph-caret-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+                        <a class="dropdown-item is-active"> No Penalty </a>
+                        <a class="dropdown-item"> +2 </a>
+                        <a class="dropdown-item"> DNF </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
     <script>
+        const dropdownLabel = document.getElementById("dropdown-label");
+        const dropdownItems = document.getElementsByClassName("dropdown-item");
+
         document.addEventListener('DOMContentLoaded', function () {
+            const dropdowns = document.querySelectorAll('.dropdown');
+
+            dropdowns.forEach(dropdown => {
+                // Get the dropdown trigger element
+                const trigger = dropdown.querySelector('.dropdown-trigger');
+
+                // Add a click event listener to the trigger
+                trigger.addEventListener('click', function () {
+                    // Toggle the 'is-active' class on the dropdown
+                    dropdown.classList.toggle('is-active');
+                });
+            });
+
+            for (let item of dropdownItems) {
+                item.addEventListener("click", () => {
+                    dropdownLabel.textContent = item.textContent;
+                    document.getElementById("main-dropdown").classList.toggle('is-active');
+                })
+            }
+
             let timerElement = document.getElementById('time');
             let resetButton = document.getElementById('reset');
             let keyboardButton = document.getElementById('keyboard');
@@ -66,9 +107,17 @@
 
             // Submit button functionality (POST request)
             submitButton.addEventListener('click', function () {
-                let timeValue = timerElement.innerText;
+                let timeValue = parseFloat(timerElement.innerText);
+                let penalty_text = dropdownLabel.textContent.toLowerCase();
+                let penalty = 0;
+                if (penalty_text.includes("+2")) {
+                    penalty = 2;
+                    timeValue += 2;
+                } else if (penalty_text.includes("dnf")) {
+                    penalty = 8;
+                }
                 if (parseFloat(timeValue) !== 0) {
-                    fetch('/api/submit/{{ scramble_id }}/' + timeValue, {
+                    fetch('/api/submit/{{ scramble_id }}/' + timeValue + '/' + penalty, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -76,7 +125,7 @@
                     })
                         .then(() => {
                             location.reload()
-                        });
+                        }).catch(() => window.location.href = '/error');
                 }
             });
 
@@ -101,7 +150,7 @@
             }
 
             // Tap/click to start or stop logic
-            timerSection.addEventListener('click', function () {
+            function handleInput() {
                 let currentTime = parseFloat(timerElement.innerText);
 
                 // Only start if timer is at 0.00 and not currently running
@@ -114,7 +163,21 @@
                     clearInterval(timerInterval);
                     isRunning = false;
                 }
-            })
+            }
+
+            // Use pointerdown, which works for both touch and mouse (including trackpads)
+            timerSection.addEventListener('pointerdown', function (event) {
+                event.preventDefault(); // Prevents any default behavior like double-tap zoom
+                handleInput();
+            });
+
+            // Listen for spacebar keypress (key code 32)
+            document.addEventListener('keydown', function (event) {
+                if (event.code === 'Space') {
+                    event.preventDefault(); // Prevents the default behavior of scrolling down the page
+                    handleInput();
+                }
+            });
         });
     </script>
 {% endblock body %}

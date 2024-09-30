@@ -21,6 +21,7 @@ use crate::mosaic::{
 use crate::timer::{leaderboard_view, timer_base};
 use dotenvy::dotenv;
 use rocket::fs::FileServer;
+use rocket::response::Redirect;
 use rocket_db_pools::Database;
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::OAuth2;
@@ -30,14 +31,15 @@ use rocket_oauth2::OAuth2;
 struct CubeClub(sqlx::SqlitePool);
 
 #[get("/")]
-async fn index(init: Init, config: Config) -> Template {
-    init.do_(|base| async move {
-        Ok(Template::render(
-            "index",
-            context! {base, cg_link: config.cg_link},
-        ))
-    })
-    .await
+async fn index(init: Init) -> Template {
+    init.do_(|base| async move { Ok(Template::render("index", context! {base})) })
+        .await
+}
+
+#[get("/cg")]
+async fn cg(init: Init, config: Config) -> Redirect {
+    init.do_redirect(|_| async move { Ok(Redirect::to(config.cg_link)) })
+        .await
 }
 
 #[get("/error?<code>")]
@@ -68,6 +70,7 @@ async fn rocket() -> _ {
             routes![
                 index,
                 error,
+                cg,
                 timer_base,
                 leaderboard_view,
                 google_login,
