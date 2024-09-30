@@ -56,6 +56,9 @@ cargo run
 
 Then go to [localhost:8000](localhost:8000) in a browser.
 
+In development mode, any client may bypass authentication and login as user {{USER}} by visiting:
+`localhost:8000/admin/iam_user/{{USER}}`
+
 # Exporting the database
 
 Follow these instructions if changes have been made to the database.
