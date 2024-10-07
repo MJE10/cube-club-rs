@@ -10,7 +10,7 @@ extern crate rocket;
 
 use crate::admin::become_user;
 use crate::leaderboard::{get_leaderboard, submit_single};
-use crate::login::{google_callback, google_login, logout, GoogleUserInfo};
+use crate::login::{checkin, google_callback, google_login, logout, GoogleUserInfo};
 use crate::model::base::{error_catcher, Base, Init};
 use crate::model::config::Config;
 use crate::model::scramble::ScrambleManager;
@@ -77,7 +77,8 @@ async fn rocket() -> _ {
                 google_callback,
                 logout,
                 submit_single,
-                get_leaderboard
+                get_leaderboard,
+                checkin,
             ],
         )
         .mount("/admin", routes!(become_user))
