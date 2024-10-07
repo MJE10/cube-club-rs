@@ -5,6 +5,7 @@ use log::info;
 use reqwest::header::AUTHORIZATION;
 use rocket::http::{Cookie, CookieJar, SameSite};
 use rocket::response::Redirect;
+use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::{OAuth2, TokenResponse};
 
 /// User information to be retrieved from the Google People API.
@@ -16,6 +17,12 @@ pub struct GoogleUserInfo {
     given_name: String,
     family_name: String,
     picture: String,
+}
+
+#[get("/checkin")]
+pub async fn checkin(init: Init) -> Template {
+    init.do_(|base| async move { Ok(Template::render("basic/checkin", context! {base})) })
+        .await
 }
 
 #[get("/logout")]
@@ -72,7 +79,7 @@ pub async fn google_callback(
                 .same_site(SameSite::Lax)
                 .build(),
         );
-        Ok(Redirect::to("/"))
+        Ok(Redirect::to("/checkin"))
     })
     .await
 }
