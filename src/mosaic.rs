@@ -129,7 +129,7 @@ pub async fn mosaic_viewer(init: Init) -> Template {
 #[get("/setDesign/<id>")]
 pub async fn set_design(init: Init, id: i64) -> Redirect {
     init.do_redirect(|mut base| async move {
-        base.require_admin_user()?;
+        base.require_mosaic_select()?;
 
         let mut config = Config::get(base.db()).await?;
         config.mosaic_design_id = id;
@@ -158,7 +158,7 @@ struct SelectParams {
 #[get("/select")]
 pub async fn mosaic_select_page(init: Init) -> Template {
     init.do_(|mut base| async move {
-        base.require_admin_user()?;
+        base.require_mosaic_select()?;
 
         let ids = MosaicDesign::list(base.db()).await?;
         let mut designs = vec![];

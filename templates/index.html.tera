@@ -21,6 +21,10 @@
             <h1>Admin Actions</h1>
             <a onclick="changeUser()">Become someone else</a><br>
             <a href="/mosaic/select">Select mosaic</a>
+            {% elif base.is_mosaic_select %}
+            <br>
+            <div class="block"></div>
+            <a href="/mosaic/select">Select mosaic</a>
         {% endif %}
     </section>
     <script>

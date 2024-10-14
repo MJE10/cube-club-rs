@@ -42,6 +42,7 @@ pub struct Base {
 pub struct HtmlBase {
     pub user: Option<User>,
     pub is_admin: bool,
+    pub is_mosaic_select: bool,
 }
 
 impl Deref for Base {
@@ -75,16 +76,23 @@ impl<'r> request::FromRequest<'r> for Init {
         let user = request.guard::<User>().await.succeeded();
         let mut db = request.guard::<Connection<CubeClub>>().await.expect("db");
         let db2 = request.guard::<Connection<CubeClub>>().await.expect("db");
-        let is_admin = if let Some(user) = &user {
-            user.is_admin(&mut db).await.unwrap_or(false)
+        let (is_admin, is_mosaic_select) = if let Some(user) = &user {
+            (
+                user.is_admin(&mut db).await.unwrap_or(false),
+                user.is_mosaic_select(&mut db).await.unwrap_or(false),
+            )
         } else {
-            false
+            (false, false)
         };
         request::Outcome::Success(Init {
             conn: db,
             base: Base {
                 conn: db2,
-                base: HtmlBase { user, is_admin },
+                base: HtmlBase {
+                    user,
+                    is_admin,
+                    is_mosaic_select,
+                },
             },
         })
     }
@@ -175,6 +183,18 @@ impl Base {
     pub fn require_admin_user(&self) -> anyhow::Result<User> {
         if let Some(user) = &self.user {
             if self.is_admin {
+                Ok(user.clone())
+            } else {
+                Err(anyhow!(NOT_ADMIN))
+            }
+        } else {
+            Err(anyhow!(NOT_LOGGED_IN))
+        }
+    }
+
+    pub fn require_mosaic_select(&self) -> anyhow::Result<User> {
+        if let Some(user) = &self.user {
+            if self.is_mosaic_select {
                 Ok(user.clone())
             } else {
                 Err(anyhow!(NOT_ADMIN))

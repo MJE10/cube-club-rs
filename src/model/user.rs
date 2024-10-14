@@ -9,6 +9,7 @@ use sqlx::SqliteConnection;
 use std::ops::DerefMut;
 
 pub const ROLE_ADMIN: i64 = 1;
+pub const ROLE_MOSAIC_SELECT: i64 = 2;
 
 #[derive(Clone, Serialize)]
 #[allow(dead_code)]
@@ -106,11 +107,15 @@ impl User {
     }
 
     pub async fn has_role(&self, db: &mut SqliteConnection, role: i64) -> anyhow::Result<bool> {
-        Ok(sqlx::query!("SELECT COUNT(*) has_role FROM user u JOIN user_role ur on u.id = ur.user WHERE u.id = ? AND ur.id = ?",
+        Ok(sqlx::query!("SELECT COUNT(*) has_role FROM user u JOIN user_role ur on u.id = ur.user WHERE u.id = ? AND ur.role = ?",
             self.id, role).fetch_one(db).await?.has_role > 0)
     }
 
     pub async fn is_admin(&self, db: &mut SqliteConnection) -> anyhow::Result<bool> {
         self.has_role(db, ROLE_ADMIN).await
+    }
+
+    pub async fn is_mosaic_select(&self, db: &mut SqliteConnection) -> anyhow::Result<bool> {
+        self.has_role(db, ROLE_MOSAIC_SELECT).await
     }
 }
